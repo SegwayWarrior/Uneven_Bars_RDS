@@ -27,13 +27,6 @@
 #include "driverlib/pin_map.h"
 #include "inc/hw_memmap.h"
 
-int main(void)
-{
-    initGPIO();
-    // main loop polls e-stop state
-	return 0;
-}
-
 void initGPIO(void)
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);    //LEDS
@@ -67,35 +60,46 @@ void initGPIO(void)
 
 }
 
+void initTimer(void)
+{
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+    ROM_TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);    //32 bit timer, configure timer operation as periodic
+    ROM_TimerLoadSet(TIMER0_BASE, TIMER_A, 1200000);    //120,000,000 / 1,200,000 = 100Hz
+    TimerIntRegister(TIMER0_BASE, TIMER_A, TIMER0ISR);  //TIMER0ISR is the name of the ISR
+    ROM_IntEnable(INT_TIMER0A);
+    ROM_TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT); //timer interrupts when timeout
+    ROM_TimerEnable(TIMER0_BASE, TIMER_A);  //start timer
+
+    //ROM_IntMasterEnable();  //do i need this line?  example has it as second line of function after peripheral enable
+
+}
+
 void ESTOP(void){  //should this have the priority and sub-priority levels?...IPL6SRS
     GPIOIntClear(GPIO_PORTB_BASE, GPIO_INT_PIN_0);
-
-    //TOGGLE LEDS
 
     //uint8_t valueRED = GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_1);
     //uint8)t valueBLUE = GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_2);
 
-    while(1)
+    while(state == 0)   //while GPIO pin is low
     {
         GPIO_PORTF_DATA_R |= 0x02; //turn on Red LED on PF1
-        GPIO_PORTF_DATA_R |= 0x04; //turn on Blue LED on PF2
-
-
-        for(...) //delay, want 100Hz
-        {
-            ;
-        }
-
-        GPIO_PORTF_DATA_R &= ~(0x02);   //turn off Red LED
-        GPIO_PORTF_DATA_R &= ~(0x04);   //turn off Blue LED
-
-        for(...)
-        {
-            ;
-        }
-
     }
+    GPIO_PORTF_DATA_R &= ~(0x02);   //turn off Red LED when GPIO pin goes high again
 
+}
+
+void TIMERISR(void) //want interrupt to run at 100Hz
+{
+    ROM_TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT); //clear timer interrupt
+
+    if(state == 0)  //if GPIO pin is low, turn on blue LED, pole "state" in main function
+    {
+        GPIO_PORTF_DATA_R |= 0x04; //turn on Blue LED on PF2
+    }
+    else
+    {
+        GPIO_PORTF_DATA_R &= ~(0x04);   //turn off Blue LED
+    }
 }
 
 /*
@@ -109,4 +113,26 @@ void ESTOP(void){  //should this have the priority and sub-priority levels?...IP
  * this tutorial seems to do it one way then convert to the other way while keeping the same function
  *
  * https://www.youtube.com/watch?v=bQ50pzqFA5Q
+ *
+ * should have two ISR: 1 with the timer and 1 with the GPIO
+ *
+ * digitalWrite(RED_LED, digitalRead(RED_LED) ^ 1);              // toggle LED pin
+ *  is "^" equivalent to "!"?
+ *  https://gist.github.com/robertinant/10398194
+ *
+ * https://henryforceblog.wordpress.com/2015/05/02/blink-example-using-timer-on-a-tiva-launchpad/
+ *
  */
+
+int main(void)      // main loop polls e-stop state
+{
+    initGPIO();
+    initTimer();
+    uint8_t state
+    while(1)
+    {
+        state = GPIOPinRead(GPIO_PORTB_BASE, GPIO_PIN_0);   //checks the state of the GPIO pin
+    }
+
+    return 0;
+}
