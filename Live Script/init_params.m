@@ -38,7 +38,7 @@ function params = init_params
     params.model.geom.top.r_com = 0.5;
     params.model.geom.mid.r_com = 0.5;
     params.model.geom.bot.r_com = 0.5;
-%     params.model.geom.pend.w = 0.1; % width of the pendulum
+    params.model.geom.link.w = 0.05; % width of the pendulum
     
     params.viz.colors.top = [1 1 1];
     params.viz.colors.mid = [1 1 1];
@@ -58,13 +58,13 @@ function params = init_params
     params.viz.colors.tracers.bot_com = 'c';
     params.viz.colors.tracers.bot_tip = 'c';
     
-    params.viz.axis_lims = [-3,3,-2,2];
+    params.viz.axis_lims = [-5,5,-5,5];
     
     % parameters related to simulating (integrating) the dynamics forward
     % in time:
     params.sim.ICs.theta_1 = 0;      % initial theta_1 position
-    params.sim.ICs.theta_2 = pi/2;   % initial theta_2 position
-    params.sim.ICs.theta_3 = -pi/2;      % initial theta_3 position
+    params.sim.ICs.theta_2 = 0;   % initial theta_2 position
+    params.sim.ICs.theta_3 = 0;      % initial theta_3 position
     
     params.sim.ICs.dtheta_1 = 0;      % initial theta_1 velocity
     params.sim.ICs.dtheta_2 = 0;      % initial theta_2 velocity

@@ -68,9 +68,7 @@ syms x_tip_top x_tip_mid x_tip_bot real
 
 % y-coordinates of top, mid, bot tip:
 syms y_tip_top y_tip_mid y_tip_bot real
-% Note: the dynamics don't care where the pendulum tip is (only the 
-% pendulum CoM), but keeping track of the tip will be helpful for 
-% visualizing the robot (could also be helpful for some control tasks).
+
 fprintf('\t...done.\n');
 
 %% Define inertial (and other) parameters
@@ -172,9 +170,9 @@ fprintf('\tGenerating potential energy equation...\n');
 syms pe_top pe_mid pe_bot PE real
 
 % potential energy of each link:
-pe_top = m_top*g*y_com_top;
-pe_mid = m_mid*g*y_com_mid;
-pe_bot = m_bot*g*y_com_bot;
+pe_top = m_top * g * y_com_top;
+pe_mid = m_mid * g * y_com_mid;
+pe_bot = m_bot * g * y_com_bot;
 
 %total potential energy:
 PE = pe_top + pe_mid + pe_bot;
@@ -253,7 +251,7 @@ for i = 1:numel(q)
     fprintf('\t\t\tM(%d,:)...\n',i)
     for j = 1:numel(q)
         fprintf('\t\t\t\tj = %d\n',j);
-        M(i,j) = diff(ELeq_LHS(i),ddq(j)); %TODO
+        M(i,j) = diff(ELeq_LHS(i),ddq(j));
         M(i,j) = simplify(M(i,j));
     end
     
@@ -369,7 +367,7 @@ fprintf('\tLinearizing the dynamics about the upright equilibrium...\n')
 % Note: we linearize the state-space dynamics by performing a 1st-order
 % Taylor series approximation, evaluated at the upright equilibrium:
 theta_1 = 0; % TODO; theta_pend is defined ccw+ w.r.t. x-axis
-theta_2 = sym(pi/2);
+theta_2 = 0;
 theta_3 = 0;
 dtheta_1 = 0;
 dtheta_2 = 0;

@@ -72,34 +72,58 @@ parse(p, q, params, varargin{:});
 % % The pendulum is a rectangle whose center is q(1) = x_cart. The pendulum
 % % can translate horizontally and can rotate, so we first compute a 
 % % homogeneous transformation matrix T_pend in SE(2):
-% 
-% T_pend = [cos(q(2)), -sin(q(2)), q(1);
-%           sin(q(2)),  cos(q(2)), 0;
-%           0,          0,         1];
+% % 
+% T_top = [cos(q(1)), -sin(q(1)), 0;
+%           sin(q(1)),  cos(q(1)),0;
+%           0,          0,        1];
+% T_mid = [cos(q(2)), -sin(q(2)), 0;
+%          sin(q(2)),  cos(q(2)), 0;
+%          0,          0,         1];
+% T_bot = [cos(q(3)), -sin(q(3)), 0;
+%          sin(q(3)),  cos(q(3)), 0;
+%          0,          0,         1];
 % 
 % % We first compute the 4 corners of the pendulum when the robot is in the
 % % "home" configuration (q(1) = q(2) = 0):
-% pend.home.upp_left.x    = 0;
-% pend.home.upp_left.y    = 0.5*params.model.geom.pend.w;
+% top.home.upp_left.x    = 0;
+% top.home.upp_left.y    = 0.5*params.model.geom.link.w;
+%  
+% top.home.upp_right.x   = params.model.geom.top.l;
+% top.home.upp_right.y   = 0.5*params.model.geom.link.w;
 % 
-% pend.home.upp_right.x   = params.model.geom.pend.l;
-% pend.home.upp_right.y   = 0.5*params.model.geom.pend.w;
+% top.home.low_right.x   = params.model.geom.top.l;
+% top.home.low_right.y   = -0.5*params.model.geom.link.w;
 % 
-% pend.home.low_right.x   = params.model.geom.pend.l;
-% pend.home.low_right.y   = -0.5*params.model.geom.pend.w;
+% top.home.low_left.x    = 0;
+% top.home.low_left.y    = -0.5*params.model.geom.link.w;
 % 
-% pend.home.low_left.x    = 0;
-% pend.home.low_left.y    = -0.5*params.model.geom.pend.w;
-% 
-% pend.home.corners = horzcat([pend.home.upp_left.x; pend.home.upp_left.y;   1],...
-%                             [pend.home.upp_right.x; pend.home.upp_right.y; 1],...
-%                             [pend.home.low_right.x; pend.home.low_right.y; 1],...
-%                             [pend.home.low_left.x;  pend.home.low_left.y;  1]);
+% top.home.corners = horzcat([top.home.upp_left.x; top.home.upp_left.y;   1],...
+%                            [top.home.upp_right.x; top.home.upp_right.y; 1],...
+%                            [top.home.low_right.x; top.home.low_right.y; 1],...
+%                            [top.home.low_left.x;  top.home.low_left.y;  1]);
 % 
 % % Now compute the 4 corners of the pendulum after undergoing planar
 % % translation + rotation as described by T_pend:
-% pend.curr.corners = T_pend*pend.home.corners;
-
+% top.curr.corners = T_top*top.home.corners;
+% 
+% mid.home.upp_left.x    = top.home.upp_right.x;
+% mid.home.upp_left.y    = top.home.upp_right.y;
+%  
+% mid.home.upp_right.x   = mid.home.upp_left.x + params.model.geom.mid.l;
+% mid.home.upp_right.y   = mid.home.upp_left.y;
+% 
+% mid.home.low_left.x    = top.home.low_right.x;
+% mid.home.low_left.y    = top.home.low_right.y;
+% 
+% mid.home.low_right.x   = mid.home.low_left.x + params.model.geom.mid.l;
+% mid.home.low_right.y   = mid.home.low_left.y;
+% 
+% mid.home.corners = horzcat([mid.home.upp_left.x; mid.home.upp_left.y;   1],...
+%                            [mid.home.upp_right.x; mid.home.upp_right.y; 1],...
+%                            [mid.home.low_right.x; mid.home.low_right.y; 1],...
+%                            [mid.home.low_left.x;  mid.home.low_left.y;  1]);
+% 
+% mid.curr.corners = T_mid*mid.home.corners;
 %% Evaluate forward kinematics at points of interest
 FK = fwd_kin(q,params);
 
@@ -135,7 +159,10 @@ end
 
 % fill(cart.curr.corners(1,:),cart.curr.corners(2,:),params.viz.colors.cart);
 % hold on;
-% fill(pend.curr.corners(1,:),pend.curr.corners(2,:),params.viz.colors.pend);
+% fill(top.curr.corners(1,:), top.curr.corners(2,:),[1 1 1]);
+% hold on;
+% fill(mid.curr.corners(1,:), mid.curr.corners(2,:),[1 1 1]);
+% hold on;
 plot(top.curr.com.x, top.curr.com.y,'o','MarkerSize',20,...
     'MarkerFaceColor',params.viz.colors.top_com,...
     'MarkerEdgeColor',params.viz.colors.top_com);

@@ -43,7 +43,7 @@ addRequired(p,'triple_pend_time',...
 addRequired(p,'triple_pend_state', ...
     @(x) isnumeric(x) && size(x,1)==6 && size(x,2)==1);
 addRequired(p,'triple_pend_u_ff',...
-    @(u_ff) isnumeric(u_ff) && size(u_ff,1)==1 && size(u_ff,2)==1);
+    @(u_ff) isnumeric(u_ff) && size(u_ff,1)==2 && size(u_ff,2)==1);
 addRequired(p,'triple_pend_params', ...
     @(params) ~isempty(params));
 %   2b: optional inputs:
@@ -57,14 +57,14 @@ parse(p, t,x,u_ff,params,varargin{:});
 % Finally, actually compute the controls + dynamics:
     switch p.Results.controller
         case 'passive'
-            u_fb = 0;
+            u_fb = [0;0];
         case 'stabilize'
-            x_ref = [0;pi/2;0;0;0;0];
+            x_ref = [0;0;0;0;0;0];
             u_fb = -params.control.inverted.K*(x - x_ref);
         case 'swingup'
-            u_fb = 0;
+            u_fb = [0;0];
         otherwise
-            u_fb = 0;
+            u_fb = [0;0];
     end
 
     u = u_ff + u_fb;
