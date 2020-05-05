@@ -270,7 +270,7 @@ fprintf('\tLinearizing the dynamics about the upright equilibrium...\n')
 
 % Note: we linearize the state-space dynamics by performing a 1st-order
 % Taylor series approximation, evaluated at the upright equilibrium:
-theta_1 = pi/2; % TODO; theta_pend is defined ccw+ w.r.t. x-axis
+theta_1 = 0; % TODO; theta_pend is defined ccw+ w.r.t. x-axis
 theta_2 = 0;
 theta_3 = 0;
 dtheta_1 = 0;
