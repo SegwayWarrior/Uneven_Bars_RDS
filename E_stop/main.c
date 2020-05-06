@@ -26,53 +26,12 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/pin_map.h"
 #include "inc/hw_memmap.h"
+#include "driverlib/rom.h"
+#include "driverlib/rom_map.h"
+#include "driverlib/timer.h"
+#include "driverlib/interrupt.h"
 
-void initGPIO(void)
-{
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);    //LEDS
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);    //use PORTB for interrupt
-
-    //do I need this...? GPIOPinConfigure(uint32_t ui32PinConfig)...
-
-    /*
-    void GPIOPinTypeGPIOInput(uint32_t ui32Port, uint8_t ui8Pins)
-    Parameters:
-    ui32Port is the base address of the GPIO port.
-    ui8Pins is the bit-packed representation of the pin(s).
-     */
-    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2);  //PF1 RED LED, PF2 BLUE LED, not totally sure what the OR means here?
-    GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_0);
-
-    GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_0, GPIO_LOW_LEVEL);    //sets interrupt detection to low level
-
-    GPIOIntRegister(GPIO_PORTB_BASE, ESTOP);
-
-    GPIOIntEnable(GPIO_PORTB_BASE, GPIO_INT_PIN_0);
-
-    /*
-    GPIOIntEnable(GPIO_PORTB_BASE, GPIO_INT_PIN_0);
-    IntPrioritySet(INT_GPIOB, 6);
-    IntRegister(INT_GPIOB, ESTOP);  //name of ISR
-    IntEnable(INT_GPIOB);
-    IntMasterEnable();
-     */
-
-
-}
-
-void initTimer(void)
-{
-    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
-    ROM_TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);    //32 bit timer, configure timer operation as periodic
-    ROM_TimerLoadSet(TIMER0_BASE, TIMER_A, 1200000);    //120,000,000 / 1,200,000 = 100Hz
-    TimerIntRegister(TIMER0_BASE, TIMER_A, TIMER0ISR);  //TIMER0ISR is the name of the ISR
-    ROM_IntEnable(INT_TIMER0A);
-    ROM_TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT); //timer interrupts when timeout
-    ROM_TimerEnable(TIMER0_BASE, TIMER_A);  //start timer
-
-    //ROM_IntMasterEnable();  //do i need this line?  example has it as second line of function after peripheral enable
-
-}
+uint8_t state;
 
 void ESTOP(void){  //should this have the priority and sub-priority levels?...IPL6SRS
     GPIOIntClear(GPIO_PORTB_BASE, GPIO_INT_PIN_0);
@@ -88,9 +47,9 @@ void ESTOP(void){  //should this have the priority and sub-priority levels?...IP
 
 }
 
-void TIMERISR(void) //want interrupt to run at 100Hz
+void TIMER0ISR(void) //want interrupt to run at 100Hz
 {
-    ROM_TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT); //clear timer interrupt
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT); //clear timer interrupt
 
     if(state == 0)  //if GPIO pin is low, turn on blue LED, pole "state" in main function
     {
@@ -100,6 +59,60 @@ void TIMERISR(void) //want interrupt to run at 100Hz
     {
         GPIO_PORTF_DATA_R &= ~(0x04);   //turn off Blue LED
     }
+}
+
+void initGPIO(void)
+{
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);    //LEDS
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);    //use PORTB for interrupt
+
+    //do I need this...? GPIOPinConfigure(uint32_t ui32PinConfig)...
+
+    /*
+    void GPIOPinTypeGPIOInput(uint32_t ui32Port, uint8_t ui8Pins)
+    Parameters:
+    ui32Port is the base address of the GPIO port.
+    ui8Pins is the bit-packed representation of the pin(s).
+     */
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2);  //PF1 RED LED, PF2 BLUE LED, not totally sure what the OR means here?
+    GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, GPIO_PIN_0);
+
+
+    GPIOIntDisable(GPIO_PORTF_BASE, GPIO_PIN_4);        // Disable interrupt for PF4 (in case it was enabled)
+    GPIOIntClear(GPIO_PORTF_BASE, GPIO_PIN_4);      // Clear pending interrupts for PF4
+
+    //GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_0, GPIO_LOW_LEVEL);    //sets interrupt detection to low level
+    GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_0, GPIO_FALLING_EDGE);
+
+    GPIOIntRegister(GPIO_PORTB_BASE, ESTOP);
+
+    GPIOIntEnable(GPIO_PORTB_BASE, GPIO_INT_PIN_0);
+
+    /*
+    GPIOIntEnable(GPIO_PORTB_BASE, GPIO_INT_PIN_0);
+    IntPrioritySet(INT_GPIOB, 6);
+    IntRegister(INT_GPIOB, ESTOP);  //name of ISR
+    IntEnable(INT_GPIOB);
+    IntMasterEnable();
+     */
+
+    IntMasterEnable();
+
+
+}
+
+void initTimer(void)
+{
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+    TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);    //32 bit timer, configure timer operation as periodic
+    TimerLoadSet(TIMER0_BASE, TIMER_A, 1200000);    //120,000,000 / 1,200,000 = 100Hz
+    TimerIntRegister(TIMER0_BASE, TIMER_A, TIMER0ISR);  //TIMER0ISR is the name of the ISR
+    IntEnable(INT_TIMER0A);
+    TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT); //timer interrupts when timeout
+    TimerEnable(TIMER0_BASE, TIMER_A);  //start timer
+
+    //ROM_IntMasterEnable();  //do i need this line?  example has it as second line of function after peripheral enable
+
 }
 
 /*
@@ -128,10 +141,11 @@ int main(void)      // main loop polls e-stop state
 {
     initGPIO();
     initTimer();
-    uint8_t state
     while(1)
     {
         state = GPIOPinRead(GPIO_PORTB_BASE, GPIO_PIN_0);   //checks the state of the GPIO pin
+        SysCtlDelay(15);
+        state = 1;
     }
 
     return 0;
