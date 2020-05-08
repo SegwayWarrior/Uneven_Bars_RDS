@@ -34,16 +34,27 @@
 uint8_t state;
 
 void ESTOP(void){  //should this have the priority and sub-priority levels?...IPL6SRS
-    GPIOIntClear(GPIO_PORTB_BASE, GPIO_INT_PIN_0);
-
+    GPIOIntClear(GPIO_PORTF_BASE, GPIO_INT_PIN_4);  //portF pin4 is the left button on the TIVA
+    state = 1;
     //uint8_t valueRED = GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_1);
     //uint8)t valueBLUE = GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_2);
 
+    /*
     while(state == 0)   //while GPIO pin is low
     {
         GPIO_PORTF_DATA_R |= 0x02; //turn on Red LED on PF1
     }
     GPIO_PORTF_DATA_R &= ~(0x02);   //turn off Red LED when GPIO pin goes high again
+    */
+    /*if(state == 0)  //if GPIO pin is low, turn on blue LED, pole "state" in main function
+    {
+        GPIO_PORTF_DATA_R |= 0x02; //turn on Blue LED on PF2
+    }
+    else
+    {
+        GPIO_PORTF_DATA_R &= ~(0x02);   //turn off Blue LED
+    }
+    */
 
 }
 
@@ -51,7 +62,8 @@ void TIMER0ISR(void) //want interrupt to run at 100Hz
 {
     TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT); //clear timer interrupt
 
-    if(state == 0)  //if GPIO pin is low, turn on blue LED, pole "state" in main function
+    //if(state == 0)  //if GPIO pin is low, turn on blue LED, pole "state" in main function
+    if (state == 1)
     {
         GPIO_PORTF_DATA_R |= 0x04; //turn on Blue LED on PF2
     }
@@ -64,7 +76,7 @@ void TIMER0ISR(void) //want interrupt to run at 100Hz
 void initGPIO(void)
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);    //LEDS
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);    //use PORTB for interrupt
+    //SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);    //use PORTB for interrupt
 
     //do I need this...? GPIOPinConfigure(uint32_t ui32PinConfig)...
 
@@ -75,18 +87,19 @@ void initGPIO(void)
     ui8Pins is the bit-packed representation of the pin(s).
      */
     GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2);  //PF1 RED LED, PF2 BLUE LED, not totally sure what the OR means here?
-    GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, GPIO_PIN_0);
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_4);
 
+    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);  // Enable weak pullup resistor for PF4
 
     GPIOIntDisable(GPIO_PORTF_BASE, GPIO_PIN_4);        // Disable interrupt for PF4 (in case it was enabled)
     GPIOIntClear(GPIO_PORTF_BASE, GPIO_PIN_4);      // Clear pending interrupts for PF4
 
     //GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_0, GPIO_LOW_LEVEL);    //sets interrupt detection to low level
-    GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_0, GPIO_FALLING_EDGE);
+    GPIOIntTypeSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_FALLING_EDGE);
 
-    GPIOIntRegister(GPIO_PORTB_BASE, ESTOP);
+    GPIOIntRegister(GPIO_PORTF_BASE, ESTOP);
 
-    GPIOIntEnable(GPIO_PORTB_BASE, GPIO_INT_PIN_0);
+    GPIOIntEnable(GPIO_PORTF_BASE, GPIO_INT_PIN_4);
 
     /*
     GPIOIntEnable(GPIO_PORTB_BASE, GPIO_INT_PIN_0);
@@ -143,9 +156,17 @@ int main(void)      // main loop polls e-stop state
     initTimer();
     while(1)
     {
-        state = GPIOPinRead(GPIO_PORTB_BASE, GPIO_PIN_0);   //checks the state of the GPIO pin
-        SysCtlDelay(15);
-        state = 1;
+        //SysCtlDelay(3);
+        //state = GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4);   //checks the state of the GPIO pin
+        /*
+         * /SysCtlDelay(3);
+         * state = 1;
+         */
+
+        if (state ==1)
+        {
+            GPIO_PORTF_DATA_R |= 0x02;
+        }
     }
 
     return 0;
