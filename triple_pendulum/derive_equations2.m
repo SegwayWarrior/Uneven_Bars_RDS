@@ -1,7 +1,7 @@
 %% derive_equations.m
 
 function derive_equations2
-clear;
+clear all;
 close all;
 clc;
 
@@ -78,9 +78,7 @@ syms I_top I_mid I_bot real
 
 % Viscous damping at each joint:
 b = sym('b',[numel(q),1],'real');
-% Note: we'll account for damping at each joint (ground-cart and 
-% cart-pendulum) but we can set each damping constant to 0 later if we
-% want.
+% Note: we'll account for damping at each joint
 
 % Other variables
 g = sym('g','real'); % gravity
@@ -125,31 +123,6 @@ matlabFunction(FK,'File','autogen_fwd_kin');
 % later. Could also help with some control tasks.
 fprintf('\t...done.\n');
 
-%% Constraint Equations
-fprintf('\tInitializing constraint variables...\n');
-
-%constraint variables
-% syms constraint_t2 lambda_t2 real
-% C_mat = sym('C_mat', [numel(q), 1], 'real');
-syms c_x c_y real
-C = sym('C', [numel(q), 1], 'real');
-
-%first bar
-% constraint_t2 = theta_2 - pi/2;
-c_x = x;
-c_y = y - 2;
-
-% create constraint array
-% C_mat = simplify(jacobian(constraint_t2*lambda_t2, q))
-C = [c_x; c_y];
-
-fprintf('\t...done.\n');
-% fprintf('\tGenerating constraint equations...\n');
-% 
-% % generate MATLAB functions to compute all the constraints:
-% matlabFunction(C_mat,'File','autogen_constraints');
-% fprintf('\t...done.\n');
-
 %% Derivatives
 fprintf('\tGenerating time derivatives of the kinematics equations...\n');
 % Neat trick to compute derivatives using the chain rule
@@ -182,8 +155,8 @@ syms ke_top ke_mid ke_bot KineticEnergy real
 
 % kinetic energy of each link:
 ke_top = (1/2)*m_top*(dx_com_top^2 + dy_com_top^2) + (1/2)*I_top*(dtheta_1^2); 
-ke_mid = (1/2)*(m_mid + m_motor1 + m_motor2)*(dx_com_mid^2 + dy_com_mid^2) + (1/2)*I_mid*(dtheta_2^2);
-ke_bot = (1/2)*m_bot*(dx_com_bot^2 + dy_com_bot^2) + (1/2)*I_bot*(dtheta_3^2);
+ke_mid = (1/2)*(m_mid + m_motor1 + m_motor2)*(dx_com_mid^2 + dy_com_mid^2) + (1/2)*I_mid*(dtheta_1^2 + dtheta_2^2);
+ke_bot = (1/2)*m_bot*(dx_com_bot^2 + dy_com_bot^2) + (1/2)*I_bot*(dtheta_1^2 + dtheta_2^2 + dtheta_3^2);
 
 % total kinetic energy:
 KineticEnergy = ke_top + ke_mid + ke_bot;
@@ -223,33 +196,32 @@ fprintf('\t...done.\n');
 fprintf('\tGenerating Euler-Lagrange equations of motion...\n')
 
 % Variable initializations:
-dL_dqdot = sym('dL_dqdot',[numel(q),1],'real'); % del L/del q_dot
-dL_dq_dt = sym('dL_dq_dt',[numel(q),1],'real'); % d(del L/del dq)/dt
-dL_dq    = sym('dL_dq',[numel(q),1],'real'); % del L/del q
-EL_LHS = sym('EL_LHS',[numel(q),1],'real');
+dL_dqdot    = sym('dL_dqdot',[numel(q),1],'real'); % del L/del q_dot
+dL_dqdot_dt = sym('dL_dqdot_dt',[numel(q),1],'real'); % d(del L/del dq)/dt
+dL_dq       = sym('dL_dq',[numel(q),1],'real'); % del L/del q
+EL_LHS      = sym('EL_LHS',[numel(q),1],'real');
 
-dL_dqdot = jacobian(KineticEnergy, dq)';
-dL_dq_dt = simplify(jacobian(dL_dqdot,[q;dq])*[dq;ddq])
-dL_dq = simplify(jacobian((L),q))'
-EL_LHS = dL_dq_dt - dL_dq;
-
-% Note: no constraint forces yet
+dL_dqdot    = simplify(jacobian(L, dq))';
+dL_dqdot_dt = simplify(jacobian(dL_dqdot,[q;dq])*[dq;ddq]);
+dL_dq       = simplify(jacobian((L),q))';
+EL_LHS      = dL_dqdot_dt - dL_dq
 
 fprintf('\t...done.\n')
 
+%% Solving for Mass Matrix
 fprintf('\tSolving for the mass matrix...\n');
 
 M = sym('M', [numel(q), numel(q)],'real');
 H = sym('H', [numel(q), 1], 'real');
 
-for i = 1:numel(q)
-    for j = 1:numel(q)
-        M(i,j) = diff(EL_LHS(i),ddq(j));
-        M(i,j) = simplify(M(i,j));
-    end
-end
+% for i = 1:numel(q)
+%     for j = 1:numel(q)
+%         M(i,j) = diff(EL_LHS(i),ddq(j));
+%         M(i,j) = simplify(M(i,j));
+%     end
+% end
 
-% M = simplify(jacobian(dL_dqdot, dq))
+M = simplify(jacobian(EL_LHS, ddq))
 H = simplify(jacobian(dL_dqdot, q) * dq - dL_dq)
 
 fprintf('\t\t...done building M and H.\n');
@@ -265,6 +237,40 @@ matlabFunction(M,'File','autogen_mass_matrix');
 matlabFunction(Minv,'File','autogen_inverse_mass_matrix');
 matlabFunction(H,'File','autogen_H_eom');
 fprintf('\t\t...done.\n');
+
+%% Constraint Equations
+fprintf('\tInitializing constraint variables...\n');
+
+% constraint variables
+syms c_x c_y c_th2 real
+A = sym('A', [3, numel(q)], 'real'); % 3 constraints
+J_dx = sym('J_dx', [1, numel(q)], 'real');
+J_dy = sym('J_dy', [1, numel(q)], 'real');
+J_dth2 = sym('J_dth2', [1, numel(q)], 'real');
+dA = sym('dA', [3, numel(q)], 'real');
+
+% first bar
+c_x   = x;
+c_y   = y - 2;
+c_th2 = theta_2;
+
+J_dx   = jacobian(derivative(x), dq);
+J_dy   = jacobian(derivative(y), dq);
+J_dth2 = jacobian(derivative(theta_2), dq);
+
+A = [J_dx;
+     J_dy;
+     J_dth2]
+
+dA = simplify(jacobian(A,[q;dq])*[dq;ddq]);
+% nested for loops
+
+fprintf('\t...done.\n');
+% fprintf('\tGenerating constraint equations...\n');
+% 
+% % generate MATLAB functions to compute all the constraints:
+% matlabFunction(C_mat,'File','autogen_constraints');
+% fprintf('\t...done.\n');
 
 fprintf('...done deriving cart-pendulum equations.\n');
 
