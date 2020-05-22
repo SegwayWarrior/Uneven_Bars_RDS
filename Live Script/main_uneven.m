@@ -126,9 +126,8 @@ nq = numel(x)/2;    % assume that x = [q;q_dot];
 q_dot = x(nq+1:2*nq);
 
 % solve for control inputs at this instant
-tau_1 = 0;
-tau_2 = 0;
-Q = [0; 0; 0; tau_1; tau_2];
+% no control input yet
+Q = [0; 0; 0; 0; 0];
 
 % find the parts that don't depend on constraint forces
 H = H_eom(x,params);
@@ -141,15 +140,15 @@ switch params.sim.constraints
     case ['false','false']     % robot is off the bar
         dx(1:nq) = q_dot;
         dx(nq+1:2*nq) = Minv*(Q - H);
-        F = [0;0;0;0;0];
-    case ['true','false']      % robot is on the bar
+        F = [0;0];
+    case ['true','true']      % robot is on the bar
         A = A_all([1,2],:);
         Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
                     q_dot'*Hessian(:,:,2)*q_dot];
         Fnow = (A*Minv*A')\(A*Minv*(Q - H) + Adotqdot);
         dx(1:nq) = (eye(nq) - A'*((A*A')\A))*x(6:10);
         dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
-        F = [Fnow;0;0;0];
+        F = [Fnow];
 end
 end
 %% end of robot_dynamics.m
