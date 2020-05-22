@@ -39,7 +39,8 @@ syms ddx ddy ddtheta_1 ddtheta_2 ddtheta_3 real
 ddq = [ddx; ddy; ddtheta_1; ddtheta_2; ddtheta_3];
 
 % Generalized forces:
-syms u real; % force on the cart, in the x-direction
+Q = sym('Q', [1, numel(q)], 'real'); % Force vector on the triple pendulum
+Q = [0; 0; 0; 0; 0];
 
 fprintf('\t...done.\n');
 
@@ -214,27 +215,14 @@ fprintf('\tSolving for the mass matrix...\n');
 M = sym('M', [numel(q), numel(q)],'real');
 H = sym('H', [numel(q), 1], 'real');
 
-% for i = 1:numel(q)
-%     for j = 1:numel(q)
-%         M(i,j) = diff(EL_LHS(i),ddq(j));
-%         M(i,j) = simplify(M(i,j));
-%     end
-% end
-
 M = simplify(jacobian(EL_LHS, ddq))
 H = simplify(jacobian(dL_dqdot, q) * dq - dL_dq)
 
 fprintf('\t\t...done building M and H.\n');
 
-% compute and store inv(M):
-fprintf('\t\tComputing inv(M)...\n')
-Minv = sym('Minv',[numel(q),numel(q)],'real');
-Minv = simplify(inv(M))
-fprintf('\t\t...done.\n')
-
 fprintf('\t\tGenerating MATLAB functions...\n');
 matlabFunction(M,'File','autogen_mass_matrix');
-matlabFunction(Minv,'File','autogen_inverse_mass_matrix');
+% matlabFunction(Minv,'File','autogen_inverse_mass_matrix');
 matlabFunction(H,'File','autogen_H_eom');
 fprintf('\t\t...done.\n');
 
@@ -242,36 +230,34 @@ fprintf('\t\t...done.\n');
 fprintf('\tInitializing constraint variables...\n');
 
 % constraint variables
-syms c_x c_y c_th2 real
-A = sym('A', [3, numel(q)], 'real'); % 3 constraints
-J_dx = sym('J_dx', [1, numel(q)], 'real');
-J_dy = sym('J_dy', [1, numel(q)], 'real');
-J_dth2 = sym('J_dth2', [1, numel(q)], 'real');
-dA = sym('dA', [3, numel(q)], 'real');
+syms c_x c_y real
 
 % first bar
-c_x   = x;
-c_y   = y - 2;
-c_th2 = theta_2;
+c_x = x;
+c_y = y - 2;
 
-J_dx   = jacobian(derivative(x), dq);
-J_dy   = jacobian(derivative(y), dq);
-J_dth2 = jacobian(derivative(theta_2), dq);
-
-A = [J_dx;
-     J_dy;
-     J_dth2]
-
-dA = simplify(jacobian(A,[q;dq])*[dq;ddq]);
-% nested for loops
+C_all = [c_x; c_y];
 
 fprintf('\t...done.\n');
-% fprintf('\tGenerating constraint equations...\n');
-% 
-% % generate MATLAB functions to compute all the constraints:
-% matlabFunction(C_mat,'File','autogen_constraints');
-% fprintf('\t...done.\n');
+fprintf('\tGenerating constraint equations...\n');
 
+% generate MATLAB functions to compute all the constraints:
+matlabFunction(C_all,'File','autogen_constraints');
+fprintf('\t...done.\n');
+
+%% Derivatives of Constraints
+fprintf('\tGenerating time derivatives of the constraints...\n');
+
+A_all = jacobian(C_all, q);
+H_x = hessian(c_x, q);
+H_y = hessian(c_y, q);
+
+% generate MATLAB functions for the Jacobians and Hessians:
+matlabFunction(A_all, H_x, H_y,'File','autogen_constraint_derivatives');
+
+fprintf('\t...done.\n');
+
+%% 
 fprintf('...done deriving cart-pendulum equations.\n');
 
 end
