@@ -45,20 +45,23 @@ for i=1:length(tseg)
     p3_x = p2_x + l3*sin(th1+th2+th3);
     p3_y = p2_y - l3*sin(th1+th2+th3);
 
-    if (p1_x < 0) && (p2_x < 0) && (p3_x < 0)
+    if (p1_x < params.sim.bar1.x) && (p2_x < params.sim.bar1.x) && (p3_x < params.sim.bar1.x)
         A = A_all([1,2],:);
         Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
                     q_dot'*Hessian(:,:,2)*q_dot];
         F = inv(A*Minv*A')*(A*Minv*(Q - H) + Adotqdot);
         Fseg(:,i) = [F(1); F(2)];
-    elseif (0 < p1_x < 4) && (0 < p2_x < 4) && (0 < p3_x < 4)
+    elseif (params.sim.bar1.x < p1_x < params.sim.bar2.x) &&...
+           (params.sim.bar1.x < p2_x < params.sim.bar2.x) &&...
+           (params.sim.bar1.x < p3_x < params.sim.bar2.x)
         Fseg(:,i) = zeros(2,1);
-    elseif (4 < xx)
+    else
         A = A_all([1,2],:);
         Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
                     q_dot'*Hessian(:,:,2)*q_dot];
         F = inv(A*Minv*A')*(A*Minv*(Q - H) + Adotqdot);
         Fseg(:,i) = [F(1); F(2)];
+        
     end
     
 %     if (p1_x > 0) && (p1_y < 6) && (p2_x > 0) && (p2_y < 6) && (p3_x > 0) && (p3_y < 6)
