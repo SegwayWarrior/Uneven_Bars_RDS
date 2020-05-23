@@ -25,19 +25,50 @@ for i=1:length(tseg)
     Minv = inv(M);
     [A_all, Hessian] = constraint_derivatives(x, params);
     
-    % build the constraints and forces
-    switch params.sim.constraints 
-        % the robot is off the bar
-        case ['false', 'false']
-            Fseg(:,i) = zeros(2,0);
-            
-        % the robot is on the bar
-        case ['true', 'true',] 
-            A = A_all([1,2],:);
-            Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
-                        q_dot'*Hessian(:,:,2)*q_dot];
-            F = inv(A*Minv*A')*(A*Minv*(Q - H) + Adotqdot);
-            Fseg(:,i) = [F(1); F(2)];
+    % TRYING TO RELEASE ROBOT FROM BAR
+    xx = q(1);
+    yy = q(2);
+    th1 = q(3);
+    th2 = q(4);
+    th3 = q(5);
+    
+    l1 = params.model.geom.top.l;
+    l2 = params.model.geom.mid.l;
+    l3 = params.model.geom.bot.l;
+    
+    p1_x = xx + l1*sin(th1);
+    p1_y = yy - l1*cos(th1);
+    
+    p2_x = p1_x + l2*sin(th1+th2);
+    p2_y = p1_y - l2*cos(th1+th2);
+    
+    p3_x = p2_x + l3*sin(th1+th2+th3);
+    p3_y = p2_y - l3*sin(th1+th2+th3);
+    
+    if (p1_x > 0) && (p1_y < 0) && (p2_x > 0) && (p2_y < 0) && (p3_x > 0) && (p3_y < 0)
+        Fseg(:,i) = zeros(2,0);
+    else
+        A = A_all([1,2],:);
+        Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
+                    q_dot'*Hessian(:,:,2)*q_dot];
+        F = inv(A*Minv*A')*(A*Minv*(Q - H) + Adotqdot);
+        Fseg(:,i) = [F(1); F(2)];
     end
+    
+    % build the constraints and forces
+%     switch params.sim.constraints 
+%         % the robot is off the bar
+%         case ['false', 'false']
+%             Fseg(:,i) = zeros(2,0);
+%             
+%         % the robot is on the bar
+%         case ['true', 'true',] 
+%             A = A_all([1,2],:);
+%             Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
+%                         q_dot'*Hessian(:,:,2)*q_dot];
+%             F = inv(A*Minv*A')*(A*Minv*(Q - H) + Adotqdot);
+%             Fseg(:,i) = [F(1); F(2)];
+%     end
+
 end
 end

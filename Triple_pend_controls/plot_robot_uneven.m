@@ -71,7 +71,7 @@ if p.Results.new_fig
 end
 
 %plots the top link
-plot([0 top.curr.tip.x], [0 top.curr.tip.y],...
+plot([0 top.curr.tip.x], [2 top.curr.tip.y],...
     'LineWidth', 5, 'Color', params.viz.colors.top)
 hold on;
 
