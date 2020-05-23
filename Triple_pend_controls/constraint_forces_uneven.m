@@ -44,10 +44,16 @@ for i=1:length(tseg)
     
     p3_x = p2_x + l3*sin(th1+th2+th3);
     p3_y = p2_y - l3*sin(th1+th2+th3);
-    
-    if (p1_x > 0) && (p1_y < 0) && (p2_x > 0) && (p2_y < 0) && (p3_x > 0) && (p3_y < 0)
-        Fseg(:,i) = zeros(2,0);
-    else
+
+    if (p1_x < 0) && (p2_x < 0) && (p3_x < 0)
+        A = A_all([1,2],:);
+        Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
+                    q_dot'*Hessian(:,:,2)*q_dot];
+        F = inv(A*Minv*A')*(A*Minv*(Q - H) + Adotqdot);
+        Fseg(:,i) = [F(1); F(2)];
+    elseif (0 < p1_x < 4) && (0 < p2_x < 4) && (0 < p3_x < 4)
+        Fseg(:,i) = zeros(2,1);
+    elseif (4 < xx)
         A = A_all([1,2],:);
         Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
                     q_dot'*Hessian(:,:,2)*q_dot];
@@ -55,19 +61,14 @@ for i=1:length(tseg)
         Fseg(:,i) = [F(1); F(2)];
     end
     
-    % build the constraints and forces
-%     switch params.sim.constraints 
-%         % the robot is off the bar
-%         case ['false', 'false']
-%             Fseg(:,i) = zeros(2,0);
-%             
-%         % the robot is on the bar
-%         case ['true', 'true',] 
-%             A = A_all([1,2],:);
-%             Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
-%                         q_dot'*Hessian(:,:,2)*q_dot];
-%             F = inv(A*Minv*A')*(A*Minv*(Q - H) + Adotqdot);
-%             Fseg(:,i) = [F(1); F(2)];
+%     if (p1_x > 0) && (p1_y < 6) && (p2_x > 0) && (p2_y < 6) && (p3_x > 0) && (p3_y < 6)
+%         Fseg(:,i) = zeros(2,1);
+%     else
+%         A = A_all([1,2],:);
+%         Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
+%                     q_dot'*Hessian(:,:,2)*q_dot];
+%         F = inv(A*Minv*A')*(A*Minv*(Q - H) + Adotqdot);
+%         Fseg(:,i) = [F(1); F(2)];
 %     end
 
 end

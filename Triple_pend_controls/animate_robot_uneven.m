@@ -85,6 +85,7 @@ end
 % if video is desired...
 if p.Results.video
     v = VideoWriter('video2.avi');
+    v.FrameRate = 1/params.viz.dt;
     open(v);
 end
 
@@ -194,34 +195,6 @@ for i = 1:size(q_list/2,2)
             hold off;
         end
     end
-    
-%     if p.Results.show_constraint_forces
-%         % find the locations of the left and right bottom corners of the
-%         % foot        
-%         T_foot = [cos(theta_f),         -sin(theta_f),        x_f
-%                   sin(theta_f),         cos(theta_f),         z_f
-%                   0,                    0,                    1   ];
-%         foot.curr.corners = T_foot*params.foot.home.corners;  % the ones we want are in rows 1&2 of columns 2&3
-%         % compute the reaction forces at the two corners, assuming that the
-%         % x-direction force is distributed between the two according to
-%         % their z-direction (normal) forces
-%         Fscale = 2*params.model.geom.foot.hbot/params.model.dyn.body.m/params.model.dyn.g;  % scale factor for visualization
-%         foot.curr.force.left.x = F(1)*Fscale;
-%         foot.curr.force.left.z = F(2)*Fscale;
-%         foot.curr.force.right.x = F(3)*Fscale;
-%         foot.curr.force.right.z = F(4)*Fscale;
-%         % create vectors of x and z ends for both left and right
-%         xleft = [foot.curr.corners(1,2),foot.curr.corners(1,2)+foot.curr.force.left.x];
-%         zleft = [foot.curr.corners(2,2),foot.curr.corners(2,2)+foot.curr.force.left.z];
-%         xright = [foot.curr.corners(1,3),foot.curr.corners(1,3)+foot.curr.force.right.x];
-%         zright = [foot.curr.corners(2,3),foot.curr.corners(2,3)+foot.curr.force.right.z];
-%         % draw the vectors
-%         hold on;
-%         line(xleft,zleft,'Color',params.viz.colors.vectors,'LineWidth',2)
-%         line(xright,zright,'Color',params.viz.colors.vectors,'LineWidth',2)
-%         hold off;
-%     end
-
     if p.Results.video
         M(i) = getframe(fig_handle);
         writeVideo(v,M(i));

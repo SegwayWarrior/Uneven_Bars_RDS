@@ -41,6 +41,9 @@ parse(p, q, params, varargin{:});
 %% Evaluate forward kinematics at points of interest
 FK = fwd_kin_uneven(q,params);
 
+xx = q(1);
+yy = q(2);
+
 % (x,y) location of top link CoM:
 top.curr.com.x = FK(1,1);
 top.curr.com.y = FK(2,1);
@@ -71,7 +74,7 @@ if p.Results.new_fig
 end
 
 %plots the top link
-plot([0 top.curr.tip.x], [2 top.curr.tip.y],...
+plot([xx top.curr.tip.x], [yy top.curr.tip.y],...
     'LineWidth', 5, 'Color', params.viz.colors.top)
 hold on;
 

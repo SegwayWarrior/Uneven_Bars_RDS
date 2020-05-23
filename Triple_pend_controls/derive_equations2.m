@@ -1,4 +1,4 @@
-%% derive_equations.m
+%% derive_equations2.m
 
 function derive_equations2
 clear all;
@@ -114,7 +114,7 @@ y_com_bot = y_tip_mid - r_com_bot*cos(theta_1+theta_2+theta_3);
 x_tip_bot = x_tip_mid + l_bot*sin(theta_1+theta_2+theta_3);
 y_tip_bot = y_tip_mid - l_bot*cos(theta_1+theta_2+theta_3);
 
-% create a 2x6 array to hold all forward kinematics (FK) outputs:
+% create a 2x7 array to hold all forward kinematics (FK) outputs:
 FK = [x_com_top, x_tip_top, x_com_mid, x_tip_mid, x_com_bot, x_tip_bot;
       y_com_top, y_tip_top, y_com_mid, y_tip_mid, y_com_bot, y_tip_bot];
 
@@ -226,20 +226,20 @@ matlabFunction(M,'File','autogen_mass_matrix');
 matlabFunction(H,'File','autogen_H_eom');
 fprintf('\t\t...done.\n');
 
-%% Constraint Equations
-fprintf('\tInitializing constraint variables...\n');
+%% Constraint Equations for First Bar
+fprintf('\tInitializing constraint variables for first bar...\n');
 
-% constraint variables
+% constraint variables for first bar
 syms c_x c_y real
 
 % first bar
 c_x = x;
-c_y = y - 2;
+c_y = y-6;
 
 C_all = [c_x; c_y];
 
 fprintf('\t...done.\n');
-fprintf('\tGenerating constraint equations...\n');
+fprintf('\tGenerating constraint equations for first bar...\n');
 
 % generate MATLAB functions to compute all the constraints:
 matlabFunction(C_all,'File','autogen_constraints');
