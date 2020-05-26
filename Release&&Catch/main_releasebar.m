@@ -33,7 +33,7 @@ tspan_passive = 0:params.sim.dt:3;
 [tsim_passive, xsim_passive] = ode45(@(t,x) robot_dynamics_release(...
     t,x,0,params,'controller','passive'),...
     tspan_passive, x_IC');
-
+catch_time = size(xsim_passive,1);
 for ii = 1 : size(xsim_passive,1)
     if ((xsim_passive(ii,1)- params.model.higher.top.x)^2 + (xsim_passive(ii,2)- params.model.higher.top.y)^2) < catch_range
         catch_time = ii;
