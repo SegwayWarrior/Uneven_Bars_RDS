@@ -1,3 +1,5 @@
+clc;
+clear all;
 success = main_releasebar
 success
 if(success == 1)
