@@ -30,22 +30,30 @@ function params = init_params
     params.model.geom.mid.r_com = 0.5;
     params.model.geom.bot.r_com = 0.5;
     
-    params.viz.colors.top = [1 1 1];
-    params.viz.colors.mid = [1 1 1];
-    params.viz.colors.bot = [1 1 1];
-    
     params.viz.colors.top = [1 0.4 0.8];
     params.viz.colors.mid = [1 0.6 0.8];
     params.viz.colors.bot = [1 0.8 0.8];
     
-    params.viz.axis_lims = [-4,4,-4,4];
+    params.viz.colors.tracer.top = [0.5 0 0.5];
+    params.viz.colors.tracer.mid = [0.7 0 0.7];
+    params.viz.colors.tracer.bot = [0.9 0 0.9];
+    
+    params.viz.axis_lims = [-10,14,-8,10];
     params.viz.energy_lims = [-100,100,-100,100];
+        
+    % first bar location
+    params.sim.bar1.x = 0;
+    params.sim.bar1.y = 6;
+    
+    % second bar location
+    params.sim.bar2.x = 4.0012;
+    params.sim.bar2.y = 0.8998;
     
     % parameters related to simulating (integrating) the dynamics forward
     % in time:
-    params.sim.ICs.x = 0;        % initial x position
-    params.sim.ICs.y = 2;        % initial y position
-    params.sim.ICs.theta_1 = -pi/2;  % initial theta_1 position
+    params.sim.ICs.x = params.sim.bar1.x;        % initial x position
+    params.sim.ICs.y = params.sim.bar1.y;        % initial y position
+    params.sim.ICs.theta_1 = -3*pi/4;  % initial theta_1 position
     params.sim.ICs.theta_2 = 0;  % initial theta_2 position
     params.sim.ICs.theta_3 = 0;  % initial theta_3 position
     
@@ -66,8 +74,9 @@ function params = init_params
                    params.sim.ICs.dtheta_2;
                    params.sim.ICs.dtheta_3];
                
-    params.sim.dt = 0.01;           % simulation timestep
-    params.sim.tfinal = 20;         % simulation final time
+    params.sim.dt = 0.01;  % simulation timestep
+    params.viz.dt = 0.5;  % visualization timestep
+    params.sim.tfinal = 5; % simulation final time
     
     params.motor1.peaktorque = 1.0; % Nm assumes Maxon EC40 and 3.3x gear ratio
     params.motor2.peaktorque = 1.0; % Nm assumes Maxon EC40 and 3.3x gear ratio
@@ -75,16 +84,9 @@ function params = init_params
     % variables related to the constraints
     params.sim.constraints.number = 2;
     % list of constraints: [x, y]   1 if active; 0 if inactive
-    params.sim.constraints = ['true','true'];   % initially, both constraints are active 
+    params.sim.constraints = ['true','true'];   % initially, both constraints are active
 end
 
-% function params = init_params
-% 
-%     % variables related to the constraints
-%     % list of *unilateral* constraints: [left foot, right foot]   1 if active; 0 if inactive
-%     params.sim.constraints.uni = [1,1,0,0];   % [c_lfz; c_rfz; c_top; c_bot] initially, both left and right foot constraints are active, but the spine constraints are not
-%     params.sim.constraints.restitution = [0.0, 0.0, 0.0, 0.0];   % coefficients of restitution of the unilateral constraints
-% 
 %     % motor torques over time:
 %         % create a timeline for use here
 %         tfinal = params.sim.tfinal;
@@ -103,4 +105,3 @@ end
 %     params.motor.body.torque3 = .2*params.model.dyn.body.m*params.model.dyn.g*params.model.geom.body.r*ones(1,length(params.motor.body.time3));
 %     params.motor.body.time = horzcat(params.motor.body.time1,params.motor.body.time2,params.motor.body.time3);
 %     params.motor.body.torque = horzcat(params.motor.body.torque1,params.motor.body.torque2,params.motor.body.torque3);                                  
-% end
