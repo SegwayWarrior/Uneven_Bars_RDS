@@ -40,7 +40,15 @@ ddq = [ddx; ddy; ddtheta_1; ddtheta_2; ddtheta_3];
 
 % Generalized forces:
 Q = sym('Q', [1, numel(q)], 'real'); % Force vector on the triple pendulum
-Q = [0; 0; 0; 0; 0];
+syms tau_shoulder tau_hip
+Q = [0; 0; 0; tau_shoulder; tau_hip];
+
+% the input should be 2*1 vector [u1;u2]
+u = sym('u',[2,1],'real');
+
+% S is the selection matrix, Q = Su;S is 5*2 matrix u is 2*1 matrix; Q is
+% 5*1 matrix
+S = [0,0;0,0;0,0;1,0;0,1];
 
 fprintf('\t...done.\n');
 
@@ -214,18 +222,28 @@ fprintf('\tSolving for the mass matrix...\n');
 
 M = sym('M', [numel(q), numel(q)],'real');
 H = sym('H', [numel(q), 1], 'real');
+C = sym('C',[numel(q),numel(q)],'real');
+G = sym('G',[numel(q),1],'real');
 
 M = simplify(jacobian(EL_LHS, ddq))
 H = simplify(jacobian(dL_dqdot, q) * dq - dL_dq)
+
+for i = 1:numel(q)
+    G(i) = diff(EL_LHS(i),g)*g;
+    for j = 1:numel(q)
+        C(i,j) = diff((EL_LHS(i) - (M(i,:)*ddq + G(i))),dq(j));
+    end
+    C(i) = simplify(C(i)); 
+end
 
 fprintf('\t\t...done building M and H.\n');
 
 fprintf('\t\tGenerating MATLAB functions...\n');
 matlabFunction(M,'File','autogen_mass_matrix');
-% matlabFunction(Minv,'File','autogen_inverse_mass_matrix');
 matlabFunction(H,'File','autogen_H_eom');
+matlabFunction(C,'File','autogen_coriolis_matrix');
+matlabFunction(G,'File','autogen_grav_vector');
 fprintf('\t\t...done.\n');
-
 %% Constraint Equations for First Bar
 fprintf('\tInitializing constraint variables for first bar...\n');
 
@@ -234,7 +252,7 @@ syms c_x c_y real
 
 % first bar
 c_x = x;
-c_y = y-6;
+c_y = y;
 
 C_all = [c_x; c_y];
 
@@ -256,6 +274,28 @@ H_y = hessian(c_y, q);
 matlabFunction(A_all, H_x, H_y,'File','autogen_constraint_derivatives');
 
 fprintf('\t...done.\n');
+
+%% Generate (nonlinear) state-space model from manipulator equation
+f_ss = sym('f_ss',[2*numel(q),1],'real'); % drift vector field 
+g_ss = sym('g_ss',[2*numel(q),2],'real'); % control vector field
+
+% % temp_drift = simplify(-Minv*(C*dq + G)); % it runs about 1 hour
+% matfile_drift = matfile('savetemp_drift.mat');
+% temp_drift = matfile_drift.temp_drift;
+% %temp_ctrl = simplify(Minv*S); 
+% matfile_ctrl = matfile('savetemp_ctrl.mat');
+% temp_ctrl = matfile_ctrl.temp_ctrl;
+% 
+% % Build state-space representation:
+% for i = 1:numel(q)
+%     f_ss(i) = dq(i);
+%     g_ss(i,:) = 0;
+%     f_ss(i+numel(q)) = temp_drift(i);
+%     g_ss(i+numel(q),:) = temp_ctrl(i,:);
+% end
+% 
+% matlabFunction(f_ss,'File','autogen_drift_vector_field');
+% matlabFunction(g_ss,'File','autogen_control_vector_field');
 
 %% 
 fprintf('...done deriving cart-pendulum equations.\n');
