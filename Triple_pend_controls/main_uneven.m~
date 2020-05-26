@@ -136,34 +136,13 @@ tau_hips = 0;
 Q = [0; 0; 0; tau_shoulders; tau_hips];
 
 % find the parts that don't depend on constraint forces
-
-% H matrix
 H = H_eom(x,params);
-
-% 5x5 Mass Matrix
 M = mass_matrix_uneven(x, params);
-
-% 5x5 Coriolis Matrix
-C = coriolis_matrix_uneven(x, params);
-
-% 5x1 Grav Vector
+C = coriolois_matrix_uneven(x, params);
 G = grav_vector_uneven(x, params);
 
-% 5x2 Selection Matrix
-S = [0,0;
-     0,0;
-     0,0;
-     1,0;
-     0,1];
-
-% 5x5 Inverse Mass Matrix
 Minv = inv(M);
-
-% function that returns A matrix and Hessians
 [A_all,Hessian] = constraint_derivatives(x,params);
-
-% function that returns drift vector field and control vector field
-[f_ss, g_ss] = state_space(x, Minv, C, G, S);
 
 % TRYING TO RELEASE FROM BAR
 xx = x(1);

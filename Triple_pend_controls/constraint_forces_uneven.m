@@ -61,7 +61,7 @@ for i=1:length(tseg)
                     q_dot'*Hessian(:,:,2)*q_dot];
         F = inv(A*Minv*A')*(A*Minv*(Q - H) + Adotqdot);
         Fseg(:,i) = [F(1); F(2)];
-        
+        s
     end
     
 %     if (p1_x > 0) && (p1_y < 6) && (p2_x > 0) && (p2_y < 6) && (p3_x > 0) && (p3_y < 6)
