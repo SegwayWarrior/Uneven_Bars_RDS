@@ -6,5 +6,5 @@
 4. derive_equations_releasebar.m is the m file constructing model. the generalized coordinates are in line 19. There are five variables: x_top y_top theta_1 theta_2 theta_3;
 5. The example video is named as example_video.mp4. I did not figure out how to merge two videos in one file. So please watch the video releasing.avi and catching.avi seperately.
 6. If you want to change the bar position, please change the same code in init_params_release.m and init_params.m together.
-
+![](example.gif)
 
