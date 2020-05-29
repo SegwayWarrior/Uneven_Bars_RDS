@@ -1,16 +1,25 @@
 %% main.m
 % Triple Pendulum
 
+
 function main_uneven_on_bar
 
 % Custom code
 % simdata = double
 %assignin('base','y',2)
+% persistent com_x_pre;
+% persistent com_y_pre;
 
 sampleTime = 0.1;
 endTime = .1;
 numberOfSamples = endTime * 1/sampleTime +1;
 timeVector = (0:numberOfSamples) * sampleTime;
+
+% global com_x_pre;
+% com_x_pre = 999;
+% global com_y_pre;
+% com_y_pre = 999;
+
 
 
 %{
@@ -152,71 +161,187 @@ nq = numel(x)/2;    % assume that x = [q;q_dot];
 q_dot = x(nq+1:2*nq);
 
 % solve for control inputs at this instant
-% controller being added
+% controler
 % x(3) is theta1, x(8) is theta1_dot
-assignin('base','x',x)
+% set up parameters and solve for com
+xx = x(1);
+yy = x(2);
+th1 = x(3);
+th2 = x(4);
+th3 = x(5);
+xx_dot = x(6);
+yy_dot = x(7);
+th1_dot = x(8);
+th2_dot = x(9);
+th3_dot = x(10);
+
+l1 = params.model.geom.top.l;
+l2 = params.model.geom.mid.l;
+l3 = params.model.geom.bot.l;
+
+M1 = params.model.dyn.top.m;      % mass of the top link
+M2 = params.model.dyn.mid.m;      % mass of the mid link
+M3 = params.model.dyn.bot.m;      % mass of the bot link
+
+com_l1x = xx + l1*sin(th1)/2;
+com_l1y = yy - l1*cos(th1)/2;
+
+com_l2x = com_l1x + l2*sin(th1+th2)/2;
+com_l2y = com_l1y - l2*cos(th1+th2)/2;
+
+com_l3x = com_l2x + l3*sin(th1+th2+th3)/2;
+com_l3y = com_l2y - l3*cos(th1+th2+th3)/2;
+
+com_x = (com_l1x*M1 + com_l2x*M2 + com_l3x*M3) / (M1+M2+M3);
+com_y = (com_l1y*M1 + com_l2y*M2 + com_l3y*M3) / (M1+M2+M3);
+
+% com_list(end+1) = com_y;
+% assignin('base','com_list',com_list)
+persistent com_y_pre
+if isempty(com_y_pre)
+    com_y_pre = com_y;
+end
+persistent com_x_pre
+if isempty(com_x_pre)
+    com_x_pre = com_x;
+end
+persistent counteri
+if isempty(counteri)
+    counteri = [];
+end
+% persistent com_y_pre;
+
+% 
+% com_x_change = com_x - com_x_pre;
+com_y_change = com_y - com_y_pre;
+
+% counteri(end+1) = com_y_change;
+% assignin('base','counteri',counteri);
+
+
 
 tau_shoulders = 0;
 tau_hips = 0;
-pi = 3.141
+pi = 3.141;
 
-if (x(3)> -pi/2)   && (x(3) <-pi/4)  && (x(8) > 1) %falling botLeft1
-    if (x(4) >= -.5)
-        tau_shoulders = 0;
-    else
-        tau_shoulders = 0
-    end
-    if (x(5) >= -.5)
-        tau_hips = .6;
-    else
-        tau_hips = 1
-    end
-elseif (x(3)<0) && (x(3)>-pi/4) && (x(8) > 1) %falling botLeft2
-    if (x(4) >= -.5)
-        tau_shoulders = 0;
-    else
-        tau_shoulders = 0
-    end
-    if (x(5) >= -.5)
-        tau_hips = .3;
-    else
-        tau_hips = 1
-    end
-elseif (x(3)>pi/4) && (x(3) <pi/2)  && (x(8) < 1) %falling botRight1
-    if (x(4) <= 0.5)
-        tau_shoulders = 0;
-    else
-        tau_shoulders = 0
-    end
-    if (x(5) <= 0.5)
-        tau_hips = -.6;
-    else
-        tau_hips = -1
-    end
-elseif (x(3)<pi/4) && (x(3)>0) && (x(8) < 1) %falling botRight2
-     if (x(4) <= 0.5)
-        tau_shoulders = 0;
-    else
-        tau_shoulders = 0
-    end
-    if (x(5) <= 0.5)
-        tau_hips = .3;
-    else
-        tau_hips = -1
-    end
-elseif (x(3)<pi/4) && (x(3)>=0) && (x(8) >= 1) %rising botRight1
-    tau_shoulders = 5;
-    tau_hips = 5; 
-elseif (x(3)<pi/2) && (x(3)>pi/4) && (x(8) > 1) %rising botRight2
-    tau_shoulders = 5;
-    tau_hips = 5;
-elseif (x(3)<0) && (x(3)>-pi/4) && (x(8) < -1) %rising botLeft1
-    tau_shoulders = -5;
-    tau_hips = -5; 
-elseif (x(3)<-pi/4) && (x(3)>-pi/2) && (x(8) < -1) %rising botLeft2
-    tau_shoulders = -5;
-    tau_hips = -5;
+% if (x(3)> -pi/2)   && (x(3) <-pi/4)  && (x(8) > 1) %falling botLeft1
+% if (com_x < 0) &&  (com_y_change < 0)
+%     tau_shoulders = 1;
+%     tau_hips = 1;
+% elseif (com_x > 0) && (com_y_change < 0) % falling right
+%     tau_shoulders = -1;
+%     tau_hips = -1;
+% elseif (com_x < 0) && (com_y_change > 0) % rising left
+%     tau_shoulders = -3;
+%     tau_hips = -3;
+%     if (th2 < -pi/2)
+%         tau_shoulders = 1;
+%     end
+%     if (th3 < -pi/2)
+%         tau_hips = 1;
+%     end
+%     
+% elseif (com_x > 0) && (com_y_change > 0) % rising right
+%     tau_shoulders = 3;
+%     tau_hips = 3;
+%      if (th2 > pi/2)
+%         tau_shoulders = -1;
+%     end
+%     if (th3 > pi/2)
+%         tau_hips = -1;
+%     end
+% end
+if (th2 > pi/2) 
+        tau_shoulders = -5;
+elseif (th2 < -pi/2)
+        tau_shoulders = 5;
 end
+if (th3 > pi/2)
+        tau_hips = -5;
+elseif (th3 < -pi/2)
+        tau_hips = 5;
+end
+
+if (com_x > com_x_pre)  % moving to right
+    if (com_x < 0) % falling
+        tau_shoulders = 1;
+        tau_hips = 1;
+    else % rising
+        tau_shoulders = 3;
+        tau_hips = 3;
+    end
+     
+else
+    if (com_x > 0) % falling
+        tau_shoulders = -1;
+        tau_hips = -1;
+    else % rising
+        tau_shoulders = -3;
+        tau_hips = -3;
+    end
+    
+end
+
+
+%     if (x(4) >= -.5)
+%         tau_shoulders = 0;
+%     else
+%         tau_shoulders = 0
+%     end
+%     if (x(5) >= -.5)
+%         tau_hips = .6;
+%     else
+%         tau_hips = 1
+%     end
+% elseif (x(3)<0) && (x(3)>-pi/4) && (x(8) > 1) %falling botLeft2
+%     if (x(4) >= -.5)
+%         tau_shoulders = 0;
+%     else
+%         tau_shoulders = 0
+%     end
+%     if (x(5) >= -.5)
+%         tau_hips = .3;
+%     else
+%         tau_hips = 1
+%     end
+% elseif (x(3)>pi/4) && (x(3) <pi/2)  && (x(8) < 1) %falling botRight1
+%     if (x(4) <= 0.5)
+%         tau_shoulders = 0;
+%     else
+%         tau_shoulders = 0
+%     end
+%     if (x(5) <= 0.5)
+%         tau_hips = -.6;
+%     else
+%         tau_hips = -1
+%     end
+% elseif (x(3)<pi/4) && (x(3)>0) && (x(8) < 1) %falling botRight2
+%      if (x(4) <= 0.5)
+%         tau_shoulders = 0;
+%     else
+%         tau_shoulders = 0
+%     end
+%     if (x(5) <= 0.5)
+%         tau_hips = .3;
+%     else
+%         tau_hips = -1
+%     end
+% elseif (x(3)<pi/4) && (x(3)>=0) && (x(8) >= 1) %rising botRight1
+%     tau_shoulders = 5;
+%     tau_hips = 5; 
+% elseif (x(3)<pi/2) && (x(3)>pi/4) && (x(8) > 1) %rising botRight2
+%     tau_shoulders = 5;
+%     tau_hips = 5;
+% elseif (x(3)<0) && (x(3)>-pi/4) && (x(8) < -1) %rising botLeft1
+%     tau_shoulders = -5;
+%     tau_hips = -5; 
+% elseif (x(3)<-pi/4) && (x(3)>-pi/2) && (x(8) < -1) %rising botLeft2
+%     tau_shoulders = -5;
+%     tau_hips = -5;
+% end
+
+com_x_pre = com_x;
+com_y_pre = com_y;
 
 Q = [0; 0; 0; tau_shoulders; tau_hips];
 
@@ -251,15 +376,15 @@ Minv = inv(M);
 % [f_ss, g_ss] = state_space(x, Minv, C, G, S);
 
 % TRYING TO RELEASE FROM BAR
-xx = x(1);
-yy = x(2);
-th1 = x(3);
-th2 = x(4);
-th3 = x(5);
+% xx = x(1);
+% yy = x(2);
+% th1 = x(3);
+% th2 = x(4);
+% th3 = x(5);
 
-l1 = params.model.geom.top.l;
-l2 = params.model.geom.mid.l;
-l3 = params.model.geom.bot.l;
+% l1 = params.model.geom.top.l;
+% l2 = params.model.geom.mid.l;
+% l3 = params.model.geom.bot.l;
 
 p1_x = xx + l1*sin(th1);
 p1_y = yy - l1*cos(th1);
