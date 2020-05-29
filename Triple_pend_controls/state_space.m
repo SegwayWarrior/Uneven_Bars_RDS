@@ -21,7 +21,7 @@ f_gg = zeros(numel(x),2);
 % Build state-space representation:
 for i = 1:numel(dq)
     f_ss(i) = dq(i);
-    g_ss(i,:) = 0;
+    g_ss(i,:) = [0,0];
     f_ss(i+numel(dq)) = temp_drift(i);
     g_ss(i+numel(dq),:) = temp_ctrl(i,:);
 end
