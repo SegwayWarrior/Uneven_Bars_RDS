@@ -186,11 +186,11 @@ M3 = params.model.dyn.bot.m;      % mass of the bot link
 com_l1x = xx + l1*sin(th1)/2;
 com_l1y = yy - l1*cos(th1)/2;
 
-com_l2x = com_l1x + l2*sin(th1+th2)/2;
-com_l2y = com_l1y - l2*cos(th1+th2)/2;
+com_l2x = l1*sin(th1) + l2*sin(th1+th2)/2;
+com_l2y = l1*cos(th1) - l2*cos(th1+th2)/2;
 
-com_l3x = com_l2x + l3*sin(th1+th2+th3)/2;
-com_l3y = com_l2y - l3*cos(th1+th2+th3)/2;
+com_l3x = l1*sin(th1) + l2*sin(th1+th2) + l3*sin(th1+th2+th3)/2;
+com_l3y = l1*cos(th1) - l2*cos(th1+th2) - l3*cos(th1+th2+th3)/2;
 
 com_x = (com_l1x*M1 + com_l2x*M2 + com_l3x*M3) / (M1+M2+M3);
 com_y = (com_l1y*M1 + com_l2y*M2 + com_l3y*M3) / (M1+M2+M3);
@@ -218,39 +218,10 @@ com_y_change = com_y - com_y_pre;
 % counteri(end+1) = com_y_change;
 % assignin('base','counteri',counteri);
 
-
-
 tau_shoulders = 0;
 tau_hips = 0;
 pi = 3.141;
 
-% if (x(3)> -pi/2)   && (x(3) <-pi/4)  && (x(8) > 1) %falling botLeft1
-% if (com_x < 0) &&  (com_y_change < 0)
-%     tau_shoulders = 1;
-%     tau_hips = 1;
-% elseif (com_x > 0) && (com_y_change < 0) % falling right
-%     tau_shoulders = -1;
-%     tau_hips = -1;
-% elseif (com_x < 0) && (com_y_change > 0) % rising left
-%     tau_shoulders = -3;
-%     tau_hips = -3;
-%     if (th2 < -pi/2)
-%         tau_shoulders = 1;
-%     end
-%     if (th3 < -pi/2)
-%         tau_hips = 1;
-%     end
-%     
-% elseif (com_x > 0) && (com_y_change > 0) % rising right
-%     tau_shoulders = 3;
-%     tau_hips = 3;
-%      if (th2 > pi/2)
-%         tau_shoulders = -1;
-%     end
-%     if (th3 > pi/2)
-%         tau_hips = -1;
-%     end
-% end
 if (th2 > pi/2) 
         tau_shoulders = -5;
 elseif (th2 < -pi/2)
@@ -281,64 +252,6 @@ else
     end
     
 end
-
-
-%     if (x(4) >= -.5)
-%         tau_shoulders = 0;
-%     else
-%         tau_shoulders = 0
-%     end
-%     if (x(5) >= -.5)
-%         tau_hips = .6;
-%     else
-%         tau_hips = 1
-%     end
-% elseif (x(3)<0) && (x(3)>-pi/4) && (x(8) > 1) %falling botLeft2
-%     if (x(4) >= -.5)
-%         tau_shoulders = 0;
-%     else
-%         tau_shoulders = 0
-%     end
-%     if (x(5) >= -.5)
-%         tau_hips = .3;
-%     else
-%         tau_hips = 1
-%     end
-% elseif (x(3)>pi/4) && (x(3) <pi/2)  && (x(8) < 1) %falling botRight1
-%     if (x(4) <= 0.5)
-%         tau_shoulders = 0;
-%     else
-%         tau_shoulders = 0
-%     end
-%     if (x(5) <= 0.5)
-%         tau_hips = -.6;
-%     else
-%         tau_hips = -1
-%     end
-% elseif (x(3)<pi/4) && (x(3)>0) && (x(8) < 1) %falling botRight2
-%      if (x(4) <= 0.5)
-%         tau_shoulders = 0;
-%     else
-%         tau_shoulders = 0
-%     end
-%     if (x(5) <= 0.5)
-%         tau_hips = .3;
-%     else
-%         tau_hips = -1
-%     end
-% elseif (x(3)<pi/4) && (x(3)>=0) && (x(8) >= 1) %rising botRight1
-%     tau_shoulders = 5;
-%     tau_hips = 5; 
-% elseif (x(3)<pi/2) && (x(3)>pi/4) && (x(8) > 1) %rising botRight2
-%     tau_shoulders = 5;
-%     tau_hips = 5;
-% elseif (x(3)<0) && (x(3)>-pi/4) && (x(8) < -1) %rising botLeft1
-%     tau_shoulders = -5;
-%     tau_hips = -5; 
-% elseif (x(3)<-pi/4) && (x(3)>-pi/2) && (x(8) < -1) %rising botLeft2
-%     tau_shoulders = -5;
-%     tau_hips = -5;
-% end
 
 com_x_pre = com_x;
 com_y_pre = com_y;
