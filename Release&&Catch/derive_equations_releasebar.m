@@ -159,7 +159,7 @@ L = KE - PE;
 
 % Euler-Lagrange equations
 ELeq_term1  = sym('ELeq_term1',[numel(q),1],'real'); % d(del L/del dq)/dt
-ELeq_term2  = sym('ELeq_term2',[numel(q),1],'real'); % del L/del qa
+ELeq_term2  = sym('ELeq_term2',[numel(q),1],'real'); % del L/del q
 ELeq_damping= sym('ELeq_damping',[numel(q),1],'real'); % joint damping
 ELeq_LHS    = sym('ELeq_LHS',[numel(q),1],'real');
 

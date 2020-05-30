@@ -55,8 +55,10 @@ function params = init_params
     
  % parameters related to simulating (integrating) the dynamics forward
     % in time:
-    matfile_catch = matfile('savecatchstate.mat');
-    catch_state = matfile_catch.catch_state;
+    % matfile_catch = matfile('savecatchstate.mat');
+    % catch_state = matfile_catch.catch_state;
+    matfile_collision = matfile('savecollision.mat');
+    catch_state = matfile_collision.collision_state';
     params.sim.ICs.theta_1 = catch_state(3,1);   % initial theta_1 position
     params.sim.ICs.theta_2 = catch_state(4,1);      % initial theta_2 position
     params.sim.ICs.theta_3 = catch_state(5,1);      % initial theta_3 position

@@ -59,7 +59,7 @@ function params = init_params_release
  % initialize parameters:
     params.sim.ICs.x_top = 0;
     params.sim.ICs.y_top = 0;
-    params.sim.ICs.theta_1 = pi/3;      % initial theta_1 position
+    params.sim.ICs.theta_1 = pi/3;   % initial theta_1 position
     params.sim.ICs.theta_2 = pi/4;      % initial theta_2 position
     params.sim.ICs.theta_3 = 0;      % initial theta_3 position
     

@@ -23,7 +23,7 @@ x_IC = [params.sim.ICs.theta_1;
 plot_robot(x_IC(1:3),params,'new_fig',false);
 
 %% Simulate the robot forward in time with no control input
-tspan_passive = 0:params.sim.dt:8;
+tspan_passive = 0:params.sim.dt:3;
 [tsim_passive, xsim_passive] = ode45(@(t,x) robot_dynamics(...
     t,x,0,params,'controller','passive'),...
     tspan_passive, x_IC');
