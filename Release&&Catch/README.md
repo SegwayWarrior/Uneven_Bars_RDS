@@ -8,5 +8,5 @@
 6. If you want to change the bar position, please change the same code in init_params_release.m and init_params.m together.
 
 7. I add a file named collision.m into to generate the collision when hit the bar. 
-![](example.gif)
+![](collision.gif)
 
