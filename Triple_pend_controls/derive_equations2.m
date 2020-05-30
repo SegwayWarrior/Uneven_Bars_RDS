@@ -48,7 +48,11 @@ u = sym('u',[2,1],'real');
 
 % S is the selection matrix, Q = Su;S is 5*2 matrix u is 2*1 matrix; Q is
 % 5*1 matrix
-S = [0,0;0,0;0,0;1,0;0,1];
+S = [0,0;
+     0,0;
+     0,0;
+     1,0;
+     0,1];
 
 fprintf('\t...done.\n');
 

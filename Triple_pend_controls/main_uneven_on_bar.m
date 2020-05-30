@@ -1,7 +1,35 @@
 %% main.m
 % Triple Pendulum
 
-function main_uneven
+
+function main_uneven_on_bar
+
+% Custom code
+% simdata = double
+%assignin('base','y',2)
+% persistent com_x_pre;
+% persistent com_y_pre;
+
+sampleTime = 0.1;
+endTime = .1;
+numberOfSamples = endTime * 1/sampleTime +1;
+timeVector = (0:numberOfSamples) * sampleTime;
+
+% global com_x_pre;
+% com_x_pre = 999;
+% global com_y_pre;
+% com_y_pre = 999;
+
+
+
+%{
+Invalid matrix variable specified as workspace input in 'simulink_controller_3/From Workspace'.
+ The matrix data must be a real, double, have two dimensions, and at least two columns. The first
+ column must contain time values and the remaining columns the data values.  Matrix values cannot
+ be Inf or NaN.
+%}
+
+%sim('simulink_controller_3')
 
 %% Initialize environment
 clear;
@@ -39,8 +67,8 @@ while tnow < params.sim.tfinal
     % augment tsim and xsim; renew ICs
     tsim = [tsim;tseg];
     xsim = [xsim;xseg];
-    te_sim = [te_sim; te]
-    ye_sim = [ye_sim; ye]
+    te_sim = [te_sim; te];
+    ye_sim = [ye_sim; ye];
     tnow = tsim(end);
     x_IC = xsim(end,:); 
     
@@ -59,6 +87,9 @@ while tnow < params.sim.tfinal
         end
     end
 end
+
+assignin('base','x2',xsim)
+assignin('base','te',te_sim)
 
 %%  Plot Results %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Begin with plot of ground reaction versus weight, to be sure we're
@@ -130,9 +161,101 @@ nq = numel(x)/2;    % assume that x = [q;q_dot];
 q_dot = x(nq+1:2*nq);
 
 % solve for control inputs at this instant
-% no control input yet
+% controler
+% x(3) is theta1, x(8) is theta1_dot
+% set up parameters and solve for com
+xx = x(1);
+yy = x(2);
+th1 = x(3);
+th2 = x(4);
+th3 = x(5);
+xx_dot = x(6);
+yy_dot = x(7);
+th1_dot = x(8);
+th2_dot = x(9);
+th3_dot = x(10);
+
+l1 = params.model.geom.top.l;
+l2 = params.model.geom.mid.l;
+l3 = params.model.geom.bot.l;
+
+M1 = params.model.dyn.top.m;      % mass of the top link
+M2 = params.model.dyn.mid.m;      % mass of the mid link
+M3 = params.model.dyn.bot.m;      % mass of the bot link
+
+com_l1x = xx + l1*sin(th1)/2;
+com_l1y = yy - l1*cos(th1)/2;
+
+com_l2x = l1*sin(th1) + l2*sin(th1+th2)/2;
+com_l2y = l1*cos(th1) - l2*cos(th1+th2)/2;
+
+com_l3x = l1*sin(th1) + l2*sin(th1+th2) + l3*sin(th1+th2+th3)/2;
+com_l3y = l1*cos(th1) - l2*cos(th1+th2) - l3*cos(th1+th2+th3)/2;
+
+com_x = (com_l1x*M1 + com_l2x*M2 + com_l3x*M3) / (M1+M2+M3);
+com_y = (com_l1y*M1 + com_l2y*M2 + com_l3y*M3) / (M1+M2+M3);
+
+% com_list(end+1) = com_y;
+% assignin('base','com_list',com_list)
+persistent com_y_pre
+if isempty(com_y_pre)
+    com_y_pre = com_y;
+end
+persistent com_x_pre
+if isempty(com_x_pre)
+    com_x_pre = com_x;
+end
+persistent counteri
+if isempty(counteri)
+    counteri = [];
+end
+% persistent com_y_pre;
+
+% 
+% com_x_change = com_x - com_x_pre;
+com_y_change = com_y - com_y_pre;
+
+% counteri(end+1) = com_y_change;
+% assignin('base','counteri',counteri);
+
 tau_shoulders = 0;
 tau_hips = 0;
+pi = 3.141;
+
+if (th2 > pi/2) 
+        tau_shoulders = -5;
+elseif (th2 < -pi/2)
+        tau_shoulders = 5;
+end
+if (th3 > pi/2)
+        tau_hips = -5;
+elseif (th3 < -pi/2)
+        tau_hips = 5;
+end
+
+if (com_x > com_x_pre)  % moving to right
+    if (com_x < 0) % falling
+        tau_shoulders = 1;
+        tau_hips = 1;
+    else % rising
+        tau_shoulders = 3;
+        tau_hips = 3;
+    end
+     
+else
+    if (com_x > 0) % falling
+        tau_shoulders = -1;
+        tau_hips = -1;
+    else % rising
+        tau_shoulders = -3;
+        tau_hips = -3;
+    end
+    
+end
+
+com_x_pre = com_x;
+com_y_pre = com_y;
+
 Q = [0; 0; 0; tau_shoulders; tau_hips];
 
 % find the parts that don't depend on constraint forces
@@ -163,18 +286,18 @@ Minv = inv(M);
 [A_all,Hessian] = constraint_derivatives(x,params);
 
 % function that returns drift vector field and control vector field
-[f_ss, g_ss] = state_space(x, Minv, C, G, S);
+% [f_ss, g_ss] = state_space(x, Minv, C, G, S);
 
 % TRYING TO RELEASE FROM BAR
-xx = x(1);
-yy = x(2);
-th1 = x(3);
-th2 = x(4);
-th3 = x(5);
+% xx = x(1);
+% yy = x(2);
+% th1 = x(3);
+% th2 = x(4);
+% th3 = x(5);
 
-l1 = params.model.geom.top.l;
-l2 = params.model.geom.mid.l;
-l3 = params.model.geom.bot.l;
+% l1 = params.model.geom.top.l;
+% l2 = params.model.geom.mid.l;
+% l3 = params.model.geom.bot.l;
 
 p1_x = xx + l1*sin(th1);
 p1_y = yy - l1*cos(th1);
@@ -185,7 +308,7 @@ p2_y = p1_y - l2*cos(th1+th2);
 p3_x = p2_x + l3*sin(th1+th2+th3);
 p3_y = p2_y - l3*cos(th1+th2+th3);
 
-if (p1_x < params.sim.bar1.x) && (p2_x < params.sim.bar1.x) && (p3_x < params.sim.bar1.x)
+%if (p1_x < params.sim.bar1.x) && (p2_x < params.sim.bar1.x) && (p3_x < params.sim.bar1.x)
     s = ['true', 'true'];
     A = A_all([1,2],:);
     Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
@@ -194,6 +317,8 @@ if (p1_x < params.sim.bar1.x) && (p2_x < params.sim.bar1.x) && (p3_x < params.si
     dx(1:nq) = (eye(nq) - A'*((A*A')\A))*x(6:10);
     dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
     F = [Fnow(1); Fnow(2)];
+
+%{
 elseif (params.sim.bar1.x < p1_x < params.sim.bar2.x) &&...
        (params.sim.bar1.x < p2_x < params.sim.bar2.x) &&...
        (params.sim.bar1.x < p3_x < params.sim.bar2.x)
@@ -213,7 +338,8 @@ elseif (params.sim.bar2.x < p1_x) &&...
     dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
     F = [Fnow(1); Fnow(2)];
 end
-
+%}
+    
 end
 %% end of robot_dynamics.m
 

@@ -1,7 +1,26 @@
 %% main.m
 % Triple Pendulum
 
-function main_uneven
+function main_uneven_on_bar
+
+% Custom code
+% simdata = double
+%assignin('base','y',2)
+
+sampleTime = 0.1;
+endTime = .1;
+numberOfSamples = endTime * 1/sampleTime +1;
+timeVector = (0:numberOfSamples) * sampleTime;
+
+
+%{
+Invalid matrix variable specified as workspace input in 'simulink_controller_3/From Workspace'.
+ The matrix data must be a real, double, have two dimensions, and at least two columns. The first
+ column must contain time values and the remaining columns the data values.  Matrix values cannot
+ be Inf or NaN.
+%}
+
+%sim('simulink_controller_3')
 
 %% Initialize environment
 clear;
@@ -39,8 +58,8 @@ while tnow < params.sim.tfinal
     % augment tsim and xsim; renew ICs
     tsim = [tsim;tseg];
     xsim = [xsim;xseg];
-    te_sim = [te_sim; te]
-    ye_sim = [ye_sim; ye]
+    te_sim = [te_sim; te];
+    ye_sim = [ye_sim; ye];
     tnow = tsim(end);
     x_IC = xsim(end,:); 
     
@@ -59,6 +78,9 @@ while tnow < params.sim.tfinal
         end
     end
 end
+
+assignin('base','x2',xsim)
+assignin('base','te',te_sim)
 
 %%  Plot Results %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Begin with plot of ground reaction versus weight, to be sure we're
@@ -130,9 +152,72 @@ nq = numel(x)/2;    % assume that x = [q;q_dot];
 q_dot = x(nq+1:2*nq);
 
 % solve for control inputs at this instant
-% no control input yet
+% controller being added
+% x(3) is theta1, x(8) is theta1_dot
+assignin('base','x',x)
+
 tau_shoulders = 0;
 tau_hips = 0;
+pi = 3.141
+
+if (x(3)> -pi/2)   && (x(3) <-pi/4)  && (x(8) > 0.5) %falling botLeft1
+    if (x(4) >= 0.1)
+        tau_shoulders = 0;
+    else
+        tau_shoulders = 0
+    end
+    if (x(5) >= 0.1)
+        tau_hips = 1;
+    else
+        tau_hips = 1
+    end
+elseif (x(3)<0) && (x(3)>-pi/4) && (x(8) > 0.3) %falling botLeft2
+    if (x(4) >= 0.1)
+        tau_shoulders = 0;
+    else
+        tau_shoulders = 0
+    end
+    if (x(5) >= 0.1)
+        tau_hips = 0;
+    else
+        tau_hips = 1
+    end
+elseif (x(3)>pi/4) && (x(3) <pi/2)  && (x(8) < 0.3) %falling botRight1
+    if (x(4) <= 0.1)
+        tau_shoulders = 0;
+    else
+        tau_shoulders = 0
+    end
+    if (x(5) <= 0.1)
+        tau_hips = -1;
+    else
+        tau_hips = -1
+    end
+elseif (x(3)<pi/4) && (x(3)>0) && (x(8) < 0.3) %falling botRight2
+     if (x(4) <= 0.1)
+        tau_shoulders = 0;
+    else
+        tau_shoulders = 0
+    end
+    if (x(5) <= 0.1)
+        tau_hips = 0;
+    else
+        tau_hips = -1
+    end
+elseif (x(3)<pi/4) && (x(3)>=0) && (x(8) >= 0) %rising botRight1
+    tau_shoulders = 2;
+    tau_hips = 2; 
+elseif (x(3)<pi/2) && (x(3)>pi/4) && (x(8) > 0) %rising botRight2
+    tau_shoulders = 4;
+    tau_hips = 4;
+elseif (x(3)<0) && (x(3)>-pi/4) && (x(8) < 0) %rising botLeft1
+    tau_shoulders = -2;
+    tau_hips = -2; 
+elseif (x(3)<-pi/4) && (x(3)>-pi/2) && (x(8) < 0) %rising botLeft2
+    tau_shoulders = -4;
+    tau_hips = -4;
+end
+
 Q = [0; 0; 0; tau_shoulders; tau_hips];
 
 % find the parts that don't depend on constraint forces
@@ -163,7 +248,7 @@ Minv = inv(M);
 [A_all,Hessian] = constraint_derivatives(x,params);
 
 % function that returns drift vector field and control vector field
-[f_ss, g_ss] = state_space(x, Minv, C, G, S);
+% [f_ss, g_ss] = state_space(x, Minv, C, G, S);
 
 % TRYING TO RELEASE FROM BAR
 xx = x(1);
@@ -185,7 +270,7 @@ p2_y = p1_y - l2*cos(th1+th2);
 p3_x = p2_x + l3*sin(th1+th2+th3);
 p3_y = p2_y - l3*cos(th1+th2+th3);
 
-if (p1_x < params.sim.bar1.x) && (p2_x < params.sim.bar1.x) && (p3_x < params.sim.bar1.x)
+%if (p1_x < params.sim.bar1.x) && (p2_x < params.sim.bar1.x) && (p3_x < params.sim.bar1.x)
     s = ['true', 'true'];
     A = A_all([1,2],:);
     Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
@@ -194,6 +279,8 @@ if (p1_x < params.sim.bar1.x) && (p2_x < params.sim.bar1.x) && (p3_x < params.si
     dx(1:nq) = (eye(nq) - A'*((A*A')\A))*x(6:10);
     dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
     F = [Fnow(1); Fnow(2)];
+
+%{
 elseif (params.sim.bar1.x < p1_x < params.sim.bar2.x) &&...
        (params.sim.bar1.x < p2_x < params.sim.bar2.x) &&...
        (params.sim.bar1.x < p3_x < params.sim.bar2.x)
@@ -213,7 +300,8 @@ elseif (params.sim.bar2.x < p1_x) &&...
     dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
     F = [Fnow(1); Fnow(2)];
 end
-
+%}
+    
 end
 %% end of robot_dynamics.m
 
