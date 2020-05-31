@@ -26,14 +26,6 @@ Then I add a constraint of dtheta_1 <= 2 && dtheta_2 <= 2 && dtheta_3 <= 2 && th
 
 The value of theta_1 = pi/2 and theta_2 = pi/6 is save as firstselectvalue.mat
 The value of theta_1 = pi/2 and theta_2 = pi/3 is save as secondselectvalue.mat 
-7. theta_1 = pi/2 and theta_2 = pi/6
+7.  an example
 
 ![](1.gif)
-
-8. theta_1 = pi/2 and theta_2 = pi/3
-
-![](2.gif)
-
-9. an interesting example
-
-![](3.gif)
