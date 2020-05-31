@@ -1,6 +1,6 @@
-%% derive_equations2.m
+%% derive_equations_uneven.m
 
-function derive_equations2
+function derive_equations_uneven
 clear all;
 close all;
 clc;
