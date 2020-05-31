@@ -212,12 +212,16 @@ fprintf('\tGenerating Euler-Lagrange equations of motion...\n')
 dL_dqdot    = sym('dL_dqdot',[numel(q),1],'real'); % del L/del q_dot
 dL_dqdot_dt = sym('dL_dqdot_dt',[numel(q),1],'real'); % d(del L/del dq)/dt
 dL_dq       = sym('dL_dq',[numel(q),1],'real'); % del L/del q
+EL_damping  = sym('EL_damping',[numel(q),1],'real');% joint damping
 EL_LHS      = sym('EL_LHS',[numel(q),1],'real');
 
 dL_dqdot    = simplify(jacobian(L, dq))';
 dL_dqdot_dt = simplify(jacobian(dL_dqdot,[q;dq])*[dq;ddq]);
 dL_dq       = simplify(jacobian((L),q))';
-EL_LHS      = dL_dqdot_dt - dL_dq
+for i=1:numel(q)
+    EL_damping(i) = -b(i)*dq(i);
+end
+EL_LHS      = dL_dqdot_dt - dL_dq - EL_damping;
 
 fprintf('\t...done.\n')
 
@@ -278,29 +282,6 @@ H_y = hessian(c_y, q);
 matlabFunction(A_all, H_x, H_y,'File','autogen_constraint_derivatives');
 
 fprintf('\t...done.\n');
-
-%% Generate (nonlinear) state-space model from manipulator equation
-f_ss = sym('f_ss',[2*numel(q),1],'real'); % drift vector field 
-g_ss = sym('g_ss',[2*numel(q),2],'real'); % control vector field
-
-% % temp_drift = simplify(-Minv*(C*dq + G)); % it runs about 1 hour
-% matfile_drift = matfile('savetemp_drift.mat');
-% temp_drift = matfile_drift.temp_drift;
-% %temp_ctrl = simplify(Minv*S); 
-% matfile_ctrl = matfile('savetemp_ctrl.mat');
-% temp_ctrl = matfile_ctrl.temp_ctrl;
-% 
-% % Build state-space representation:
-% for i = 1:numel(q)
-%     f_ss(i) = dq(i);
-%     g_ss(i,:) = 0;
-%     f_ss(i+numel(q)) = temp_drift(i);
-%     g_ss(i+numel(q),:) = temp_ctrl(i,:);
-% end
-% 
-% matlabFunction(f_ss,'File','autogen_drift_vector_field');
-% matlabFunction(g_ss,'File','autogen_control_vector_field');
-
 %% 
 fprintf('...done deriving cart-pendulum equations.\n');
 
