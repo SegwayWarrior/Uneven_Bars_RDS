@@ -8,15 +8,21 @@
 5. The example picture is all the trials which could hit another bar location.
 ![](example1.jpg)
 6. There are 1846 groups could hit the bar. I count the number and value of theta_1.
-        Theta_1	   number	precent
-      1.04 (pi/3)	35	    1.89%
-      1.57 (pi/2)	1265	68.5%
-      2.09 (2pi/3)	546	    29.5%
-   Then I add a constraint of dtheta_1 <= 2 && dtheta_2 <= 2 && dtheta_3 <= 2 && theta_1 = pi/2
-        Theta_2	   number	precent
-           0	     10	    2.31%
-        0.52(pi/6)	 153	35.41%
-       1.04 (pi/3)	 208	48.14%
-        1.57 (pi/2)	  61	14.12%
-    The value of theta_1 = pi/2 and theta_2 = pi/6 is save as firstselectvalue.mat
-    The value of theta_1 = pi/2 and theta_2 = pi/3 is save as secondselectvalue.mat 
+
+| Theta_1       | number          | percent|
+| :------------ |:---------------:| -----:|
+| 1.04 (pi/3)   | 35              | 1.89% |
+| 1.57 (pi/2)   | 1265            | 68.5% |
+| 2.09 (2pi/3)  | 546             | 29.5% |
+
+Then I add a constraint of dtheta_1 <= 2 && dtheta_2 <= 2 && dtheta_3 <= 2 && theta_1 = pi/2
+
+| Theta_1       | number          | percent|
+| :------------ |:---------------:| -----:|
+| 0             | 10              | 2.31% |
+| 0.52(pi/6)    | 15              | 35.41%|
+| 1.04 (pi/3)   | 208             | 48.14%|
+| 1.57 (pi/2)   | 61              | 14.12%|
+
+The value of theta_1 = pi/2 and theta_2 = pi/6 is save as firstselectvalue.mat
+The value of theta_1 = pi/2 and theta_2 = pi/3 is save as secondselectvalue.mat 
