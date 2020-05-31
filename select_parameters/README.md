@@ -20,9 +20,15 @@ Then I add a constraint of dtheta_1 <= 2 && dtheta_2 <= 2 && dtheta_3 <= 2 && th
 | Theta_1       | number          | percent|
 | :------------ |:---------------:| -----:|
 | 0             | 10              | 2.31% |
-| 0.52(pi/6)    | 15              | 35.41%|
+| 0.52(pi/6)    | 153             | 35.41%|
 | 1.04 (pi/3)   | 208             | 48.14%|
 | 1.57 (pi/2)   | 61              | 14.12%|
 
 The value of theta_1 = pi/2 and theta_2 = pi/6 is save as firstselectvalue.mat
 The value of theta_1 = pi/2 and theta_2 = pi/3 is save as secondselectvalue.mat 
+7. theta_1 = pi/2 and theta_2 = pi/6
+![](1.gif)
+8. theta_1 = pi/2 and theta_2 = pi/3
+![](2.gif)
+9. an interesting example
+![](3.gif)
