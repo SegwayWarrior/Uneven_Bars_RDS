@@ -17,9 +17,12 @@ function params = init_params
     params.model.dyn.bot.r_com = 0.5; % radial loc. of bot link CoM
     
     params.model.dyn.g = 9.81;      % acceleration due to gravity
-    params.model.dyn.b1 = 0.2;      % damping 1
-    params.model.dyn.b2 = 0.2;      % damping 2
+    
+    params.model.dyn.b1 = 0;        % damping 1
+    params.model.dyn.b2 = 0;        % damping 2
     params.model.dyn.b3 = 0.2;      % damping 3
+    params.model.dyn.b4 = 0.2;      % damping 4
+    params.model.dyn.b5 = 0.2;      % damping 5
     
     % parameters that help with visualizing the robot:
     params.model.geom.top.l = 1; % length of top link
