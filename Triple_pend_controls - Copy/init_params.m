@@ -80,7 +80,7 @@ function params = init_params
                    params.sim.ICs.dtheta_3];
 
     params.sim.dt = 0.01;  % simulation timestep
-    params.viz.dt = 0.5;  % visualization timestep
+    params.viz.dt = 0.05;  % visualization timestep
     params.sim.tfinal = 5; % simulation final time
 
     params.motor1.peaktorque = 1.0; % Nm assumes Maxon EC40 and 3.3x gear ratio

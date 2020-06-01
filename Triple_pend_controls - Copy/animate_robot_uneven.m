@@ -55,12 +55,6 @@ if (p.Results.trace_top_com || p.Results.trace_top_tip ...
 else
     tracing = false;
 end
-
-if p.Results.video
-    v = VideoWriter('video.avi');
-    v.FrameRate = 1/params.viz.dt;
-    open(v);
-end
     
 if tracing
     top.curr.com.x = [];
@@ -84,7 +78,7 @@ end
 
 % if video is desired...
 if p.Results.video
-    v = VideoWriter('video2.avi');
+    v = VideoWriter('triple_pendulum.avi');
     v.FrameRate = 1/params.viz.dt;
     open(v);
 end

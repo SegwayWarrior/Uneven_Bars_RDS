@@ -1,7 +1,35 @@
-%% main_uneven.m
+%% main.m
 % Triple Pendulum
 
-function main_uneven
+
+function main_uneven_on_bar
+
+% Custom code
+% simdata = double
+%assignin('base','y',2)
+% persistent com_x_pre;
+% persistent com_y_pre;
+
+sampleTime = 0.1;
+endTime = .1;
+numberOfSamples = endTime * 1/sampleTime +1;
+timeVector = (0:numberOfSamples) * sampleTime;
+
+% global com_x_pre;
+% com_x_pre = 999;
+% global com_y_pre;
+% com_y_pre = 999;
+
+
+
+%{
+Invalid matrix variable specified as workspace input in 'simulink_controller_3/From Workspace'.
+ The matrix data must be a real, double, have two dimensions, and at least two columns. The first
+ column must contain time values and the remaining columns the data values.  Matrix values cannot
+ be Inf or NaN.
+%}
+
+%sim('simulink_controller_3')
 
 %% Initialize environment
 clear;
@@ -13,10 +41,22 @@ init_env();
 %% Initialize parameters
 params = init_params;
 
+global theta_desired;
+theta_desired = 0;
+global prev_error2;
+prev_error2 = 0;
+global prev_error3;
+prev_error3 = 0;
+
+global kp; 
+kp = 0.1;
+global kd; 
+kd = 1;
+
 %% Set up events using odeset
 options = odeset('Events',@robot_events);
 
-%% Simulate the robot forward in time
+%% Simulate the robot forward in time 
 x_IC = params.x_IC';    % initial conditions
 tnow = 0.0;             % starting time
 
@@ -36,47 +76,32 @@ while tnow < params.sim.tfinal
     tspan = [tnow params.sim.tfinal];
     [tseg, xseg, te, ye, ie] = ode45(@robot_dynamics, tspan, x_IC, options);
 
-    tsim = [tsim;tseg]; % augment simulation time
-    xsim = [xsim;xseg]; % augment simulation states
-    te_sim = [te_sim; te]; % augment event time
-    ye_sim = [ye_sim; ye]; % augment location of events
-    tnow = tsim(end); % updates time
-    x_IC = xsim(end,:); % renew initial conditions
-
-    % compute the constraint forces that were active
+    % augment tsim and xsim; renew ICs
+    tsim = [tsim;tseg];
+    xsim = [xsim;xseg];
+    te_sim = [te_sim; te];
+    ye_sim = [ye_sim; ye];
+    tnow = tsim(end);
+    x_IC = xsim(end,:); 
+    
+    % compute the constraint forces that were active during the jump
     [Fseg] = constraint_forces_uneven(tseg,xseg',params);
     F_list = [F_list,Fseg];
-
+    
     % if simulation terminated before tfinal, determine which constraints
     % are still active, then continue integration
     if tseg(end) < params.sim.tfinal  % termination was triggered by an event
         switch params.sim.constraints
-            case ['pumping'] % The robot is pumping up for Giant Swing
-                params.sim.constraints = ['bar1'] % Finish giant swing on bar 1
-            case ['bar1']  % The robot is on bar 1 prior to termination
-                params.sim.constraints = ['flight']; % Robot releases from bar 1 and is in flight
-            case ['flight'] % The robot is in flight prior to termination
-                % solves for dq at time t+ right after impact
-                dq_plus = collision(tseg(end), xseg(end,:)', params);
-                % renew initial conditions
-                x_IC(6:10) = dq_plus;
-                params.sim.constraints = ['bar2']; % The robot catches bar 2
+            case ['false','false']  % The robot was not on the bar prior to termination
+                 params.sim.constraints = ['false','false'];  % Now the robot is off the bar
+            case ['true','true'] % The robot was on the bar prior to termination
+                 params.sim.constraints = ['false','false'];  % Now the robot is off the bar
         end
     end
 end
 
-%%  Plot Results %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Begin with plot of ground reaction versus weight, to be sure we're
-% pushing off and then leaving the ground
-figure;
-plot(tsim,F_list(1,:)+F_list(2,:),'b-','LineWidth',2);
-hold on
-weight = (params.model.dyn.top.m + params.model.dyn.mid.m + params.model.dyn.bot.m + ...
-          params.model.dyn.motor1.m + params.model.dyn.motor2.m)*params.model.dyn.g*ones(1,length(tsim));
-plot(tsim,weight,'r-','LineWidth',1);
-ylabel('Ground Reaction vs Weight (N)')
-xlabel('time (sec)')
-hold off
+assignin('base','x2',xsim)
+assignin('base','te',te_sim)
 
 % Now let's animate
 
@@ -112,9 +137,8 @@ fprintf('Done!\n');
 %% robot_dynamics.m %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % Description:
-%   Computes constraint forces (Fnow =
-%   inv(A*Minv*A')*(A*Minv*(Q-H) + Adotqdot) and impacts (delta_dq =
-%   -Minv*A'*inv(A*Minv*A')*(1+eps)*A*q_dot;)
+%   Computes the constraint forces: 
+%       Fnow = inv(A*Minv*A')*(A*Minv*(Q-H) + Adotqdot)
 %
 %   Also computes the derivative of the state:
 %       x_dot(1:5) = (I - A'*inv(A*A')*A)*x(6:10)
@@ -136,15 +160,107 @@ nq = numel(x)/2;    % assume that x = [q;q_dot];
 q_dot = x(nq+1:2*nq);
 
 % solve for control inputs at this instant
-% no control input yet
+% controler
+% x(3) is theta1, x(8) is theta1_dot
+% set up parameters and solve for com
+xx = x(1);
+yy = x(2);
+th1 = x(3);
+th2 = x(4);
+th3 = x(5);
+xx_dot = x(6);
+yy_dot = x(7);
+th1_dot = x(8);
+th2_dot = x(9);
+th3_dot = x(10);
+
+l1 = params.model.geom.top.l;
+l2 = params.model.geom.mid.l;
+l3 = params.model.geom.bot.l;
+
+M1 = params.model.dyn.top.m;      % mass of the top link
+M2 = params.model.dyn.mid.m;      % mass of the mid link
+M3 = params.model.dyn.bot.m;      % mass of the bot link
+
+com_l1x = xx + l1*sin(th1)/2;
+com_l1y = yy - l1*cos(th1)/2;
+
+com_l2x = l1*sin(th1) + l2*sin(th1+th2)/2;
+com_l2y = l1*cos(th1) - l2*cos(th1+th2)/2;
+
+com_l3x = l1*sin(th1) + l2*sin(th1+th2) + l3*sin(th1+th2+th3)/2;
+com_l3y = l1*cos(th1) - l2*cos(th1+th2) - l3*cos(th1+th2+th3)/2;
+
+com_x = (com_l1x*M1 + com_l2x*M2 + com_l3x*M3) / (M1+M2+M3);
+com_y = (com_l1y*M1 + com_l2y*M2 + com_l3y*M3) / (M1+M2+M3);
+
+% com_list(end+1) = com_y;
+% assignin('base','com_list',com_list)
+persistent com_y_pre
+if isempty(com_y_pre)
+    com_y_pre = com_y;
+end
+persistent com_x_pre
+if isempty(com_x_pre)
+    com_x_pre = com_x;
+end
+persistent counteri
+if isempty(counteri)
+    counteri = [];
+end
+% persistent com_y_pre;
+
+% 
+% com_x_change = com_x - com_x_pre;
+com_y_change = com_y - com_y_pre;
+
+% counteri(end+1) = com_y_change;
+% assignin('base','counteri',counteri);
+
 tau_shoulders = 0;
 tau_hips = 0;
-% 5x1 Q column vector
-Q = [0;
-     0;
-     0;
-     tau_shoulders;
-     tau_hips];
+pi = 3.141;
+
+if th2 > 3.14
+    while(th2 > 3.14)
+        th2 = th2 - 3.14;
+    end
+elseif th2 < -3.14
+    while(th2 < -3.14)
+        th2 = th2 + 3.14;
+    end
+end
+
+if th3>3.14
+    while(th3>3.14)
+        th3 = th3 - 3.14;
+    end
+elseif th3 < -3.14
+    while(th3 < -3.14)
+        th3 = th3 + 3.14;
+end
+
+error2 = theta_desired - th2;
+derivative2 = error2 - prev_error2;
+
+error3 = theta_desired - th3;
+derivative3 = error3 - prev_error3;
+
+tau_shoulders = kp*error2 + kd*derivative2;
+th2
+
+tau_hips = kp*error3 + kd*derivative3;
+th3
+
+prev_error2 = error2;
+prev_error3 = error3;
+
+com_x_pre = com_x;
+com_y_pre = com_y;
+
+Q = [0; 0; 0; tau_shoulders; tau_hips];
+
+% find the parts that don't depend on constraint forces
 
 % H matrix
 H = H_eom(x,params);
@@ -175,15 +291,15 @@ Minv = inv(M);
 % [f_ss, g_ss] = state_space(x, Minv, C, G, S);
 
 % TRYING TO RELEASE FROM BAR
-xx = x(1);
-yy = x(2);
-th1 = x(3);
-th2 = x(4);
-th3 = x(5);
+% xx = x(1);
+% yy = x(2);
+% th1 = x(3);
+% th2 = x(4);
+% th3 = x(5);
 
-l1 = params.model.geom.top.l;
-l2 = params.model.geom.mid.l;
-l3 = params.model.geom.bot.l;
+% l1 = params.model.geom.top.l;
+% l2 = params.model.geom.mid.l;
+% l3 = params.model.geom.bot.l;
 
 p1_x = xx + l1*sin(th1);
 p1_y = yy - l1*cos(th1);
@@ -194,7 +310,7 @@ p2_y = p1_y - l2*cos(th1+th2);
 p3_x = p2_x + l3*sin(th1+th2+th3);
 p3_y = p2_y - l3*cos(th1+th2+th3);
 
-if (p1_x < params.sim.bar1.x) && (p2_x < params.sim.bar1.x) && (p3_x < params.sim.bar1.x)
+%if (p1_x < params.sim.bar1.x) && (p2_x < params.sim.bar1.x) && (p3_x < params.sim.bar1.x)
     s = ['true', 'true'];
     A = A_all([1,2],:);
     Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
@@ -203,13 +319,15 @@ if (p1_x < params.sim.bar1.x) && (p2_x < params.sim.bar1.x) && (p3_x < params.si
     dx(1:nq) = (eye(nq) - A'*((A*A')\A))*x(6:10);
     dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
     F = [Fnow(1); Fnow(2)];
+
+%{
 elseif (params.sim.bar1.x < p1_x < params.sim.bar2.x) &&...
        (params.sim.bar1.x < p2_x < params.sim.bar2.x) &&...
        (params.sim.bar1.x < p3_x < params.sim.bar2.x)
     s = ['false', 'false'];
     dx(1:nq) = q_dot;
     dx(nq+1:2*nq) = Minv*(Q - H);
-    F = [0;0];
+    F = [0;0]; 
 elseif (params.sim.bar2.x < p1_x) &&...
        (params.sim.bar2.x < p2_x) &&...
        (params.sim.bar2.x < p3_x)
@@ -222,16 +340,16 @@ elseif (params.sim.bar2.x < p1_x) &&...
     dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
     F = [Fnow(1); Fnow(2)];
 end
-}%
-
+%}
+    
 end
 %% end of robot_dynamics.m
 
 
 %% Event function for ODE45 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Description:
-%   Event function that is called when a constraint becomes inactive (or, in the future, active)
-
+%   Event function that is called when a constraint becomes inactive (or, in the future, active) 
+%
 % Inputs:
 %   t and x are required, but not used
 %   F is shared with parent function
@@ -241,62 +359,8 @@ end
 %   isterminal
 %   direction
 function [value,isterminal,direction] = robot_events(t,x)
-    % solves for current robot state
-    xx = x(1);
-    yy = x(2);
-    th1 = x(3);
-    th2 = x(4);
-    th3 = x(5);
-
-    % length of each link
-    l1 = params.model.geom.top.l;
-    l2 = params.model.geom.mid.l;
-    l3 = params.model.geom.bot.l;
-
-    % (x,y) location of top link tip
-    p1_x = xx + l1*sin(th1);
-    p1_y = yy - l1*cos(th1);
-
-    % (x,y) location of mid link tip
-    p2_x = p1_x + l2*sin(th1+th2);
-    p2_y = p1_y - l2*cos(th1+th2);
-
-    % (x,y) location of bot link tip
-    p3_x = p2_x + l3*sin(th1+th2+th3);
-    p3_y = p2_y - l3*cos(th1+th2+th3);
-
-    switch params.sim.constraints
-        case ['pumping'] % robot is pumping up to Giant Swing
-            value = 1;
-            isterminal = 0;
-            direction = 0;
-%             % if the robot is along positive y-axis
-%             value = [p1_x - params.sim.bar1.x;
-%                      p1_y - (params.sim.bar1.y + l1);
-%                      p2_x - params.sim.bar1.x;
-%                      p2_y - (params.sim.bar1.y + l1 + l2);
-%                      p3_x - params.sim.bar1.x;
-%                      p3_y - (params.sim.bar1.y + l1 + l2 + l3)];
-%             % terminate integration (trigger event)
-%             isterminal = 1;
-%             % positive or negative direction
-%             direction = 0;
-        case ['bar1'] % robot is on bar 1
-            % if the x location of second pendulum = x location of bar 1
-            value = p2_x - params.sim.bar1.x;
-            % terminate integration (trigger event)
-            isterminal = 1;
-            % positive or negative direction
-            direction = 0;
-        case ['flight'] % robot is in flight
-            % if the x location of the gripper = x location of bar 2
-            value = abs(xx) - params.sim.bar2.x;
-            % terminate integration (trigger event)
-            isterminal = 1;
-            % positive or negative direction
-            direction = 0;
-        case ['bar2'] % robot is on bar 2
-            % always true
+    switch params.sim.constraints  
+        case ['false','false'] % robot is off the bar
             value = 1;
             isterminal = 0;
             direction = 0;
@@ -307,6 +371,7 @@ function [value,isterminal,direction] = robot_events(t,x)
     end
 
 end
-%% end of robot_events.m
+%% end of robot_events.m 
 end
 %% End of main.m
+

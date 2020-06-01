@@ -167,7 +167,7 @@ fprintf('\tGenerating kinetic energy equation...\n');
 syms ke_top ke_mid ke_bot KineticEnergy real
 
 % kinetic energy of each link:
-ke_top = (1/2)*m_top*(dx_com_top^2 + dy_com_top^2) + (1/2)*I_top*(dtheta_1^2);
+ke_top = (1/2)*m_top*(dx_com_top^2 + dy_com_top^2) + (1/2)*I_top*(dtheta_1^2); 
 ke_mid = (1/2)*(m_mid + m_motor1 + m_motor2)*(dx_com_mid^2 + dy_com_mid^2) + (1/2)*I_mid*(dtheta_1^2 + dtheta_2^2);
 ke_bot = (1/2)*m_bot*(dx_com_bot^2 + dy_com_bot^2) + (1/2)*I_bot*(dtheta_1^2 + dtheta_2^2 + dtheta_3^2);
 
@@ -237,7 +237,7 @@ for i = 1:numel(q)
     for j = 1:numel(q)
         C(i,j) = diff((EL_LHS(i) - (M(i,:)*ddq + G(i))),dq(j));
     end
-    C(i) = simplify(C(i));
+    C(i) = simplify(C(i)); 
 end
 
 fprintf('\t\t...done building M and H.\n');
@@ -280,16 +280,16 @@ matlabFunction(A_all, H_x, H_y,'File','autogen_constraint_derivatives');
 fprintf('\t...done.\n');
 
 %% Generate (nonlinear) state-space model from manipulator equation
-f_ss = sym('f_ss',[2*numel(q),1],'real'); % drift vector field
+f_ss = sym('f_ss',[2*numel(q),1],'real'); % drift vector field 
 g_ss = sym('g_ss',[2*numel(q),2],'real'); % control vector field
 
 % % temp_drift = simplify(-Minv*(C*dq + G)); % it runs about 1 hour
 % matfile_drift = matfile('savetemp_drift.mat');
 % temp_drift = matfile_drift.temp_drift;
-% %temp_ctrl = simplify(Minv*S);
+% %temp_ctrl = simplify(Minv*S); 
 % matfile_ctrl = matfile('savetemp_ctrl.mat');
 % temp_ctrl = matfile_ctrl.temp_ctrl;
-%
+% 
 % % Build state-space representation:
 % for i = 1:numel(q)
 %     f_ss(i) = dq(i);
@@ -297,11 +297,11 @@ g_ss = sym('g_ss',[2*numel(q),2],'real'); % control vector field
 %     f_ss(i+numel(q)) = temp_drift(i);
 %     g_ss(i+numel(q),:) = temp_ctrl(i,:);
 % end
-%
+% 
 % matlabFunction(f_ss,'File','autogen_drift_vector_field');
 % matlabFunction(g_ss,'File','autogen_control_vector_field');
 
-%%
+%% 
 fprintf('...done deriving cart-pendulum equations.\n');
 
 end
