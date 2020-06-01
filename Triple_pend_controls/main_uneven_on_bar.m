@@ -41,6 +41,18 @@ init_env();
 %% Initialize parameters
 params = init_params;
 
+global theta_desired;
+theta_desired = 0;
+global prev_error2;
+prev_error2 = 0;
+global prev_error3;
+prev_error3 = 0;
+
+global kp; 
+kp = 0.1;
+global kd; 
+kd = 1;
+
 %% Set up events using odeset
 options = odeset('Events',@robot_events);
 
@@ -90,19 +102,6 @@ end
 
 assignin('base','x2',xsim)
 assignin('base','te',te_sim)
-
-%%  Plot Results %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Begin with plot of ground reaction versus weight, to be sure we're
-% pushing off and then leaving the ground
-figure;
-plot(tsim,F_list(1,:)+F_list(2,:),'b-','LineWidth',2);
-hold on
-weight = (params.model.dyn.top.m + params.model.dyn.mid.m + params.model.dyn.bot.m + ...
-          params.model.dyn.motor1.m + params.model.dyn.motor2.m)*params.model.dyn.g*ones(1,length(tsim));
-plot(tsim,weight,'r-','LineWidth',1);
-ylabel('Ground Reaction vs Weight (N)')
-xlabel('time (sec)')
-hold off
 
 % Now let's animate
 
@@ -222,36 +221,61 @@ tau_shoulders = 0;
 tau_hips = 0;
 pi = 3.141;
 
-if (th2 > pi/2) 
-        tau_shoulders = -5;
-elseif (th2 < -pi/2)
-        tau_shoulders = 5;
-end
-if (th3 > pi/2)
-        tau_hips = -5;
-elseif (th3 < -pi/2)
-        tau_hips = 5;
+if th2 > 3.14
+    while(th2 > 3.14)
+        th2 = th2 - 3.14;
+    end
+elseif th2 < -3.14
+    while(th2 < -3.14)
+        th2 = th2 + 3.14;
+    end
 end
 
-if (com_x > com_x_pre)  % moving to right
-    if (com_x < 0) % falling
-        tau_shoulders = 1;
-        tau_hips = 1;
-    else % rising
-        tau_shoulders = 3;
-        tau_hips = 3;
+if th3>3.14
+    while(th3>3.14)
+        th3 = th3 - 3.14;
     end
-     
-else
-    if (com_x > 0) % falling
-        tau_shoulders = -1;
-        tau_hips = -1;
-    else % rising
-        tau_shoulders = -3;
-        tau_hips = -3;
+elseif th3 < -3.14
+    while(th3 < -3.14)
+        th3 = th3 + 3.14;
     end
-    
 end
+
+%{
+if (th2>3.14/2)
+    error2 = 3.14 - th2;
+else
+    error2 = theta_desired - th2;
+end
+
+derivative2 = error2 - prev_error2;
+
+if(th3>3.14/2)
+    error3 = 3.14 - th3;
+else
+    error3 = theta_desired - th3;
+end
+
+derivative3 = error3 - prev_error3;
+%}
+
+error2 = theta_desired - th2;
+derivative2 = error2 - prev_error2;
+
+error3 = theta_desired - th3;
+derivative3 = error3 - prev_error3;
+
+tau_shoulders = kp*error2 + kd*derivative2;
+th2
+
+tau_hips = kp*error3 + kd*derivative3;
+th3
+
+%tau_shoulders
+%tau_hips
+
+prev_error2 = error2;
+prev_error3 = error3;
 
 com_x_pre = com_x;
 com_y_pre = com_y;
