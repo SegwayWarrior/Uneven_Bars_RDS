@@ -163,7 +163,7 @@ Minv = inv(M);
 [A_all,Hessian] = constraint_derivatives(x,params);
 
 % function that returns drift vector field and control vector field
-[f_ss, g_ss] = state_space(x, Minv, C, G, S);
+% [f_ss, g_ss] = state_space(x, Minv, C, G, S);
 
 % TRYING TO RELEASE FROM BAR
 xx = x(1);
@@ -194,6 +194,8 @@ if (p1_x < params.sim.bar1.x) && (p2_x < params.sim.bar1.x) && (p3_x < params.si
     dx(1:nq) = (eye(nq) - A'*((A*A')\A))*x(6:10);
     dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
     F = [Fnow(1); Fnow(2)];
+
+%{
 elseif (params.sim.bar1.x < p1_x < params.sim.bar2.x) &&...
        (params.sim.bar1.x < p2_x < params.sim.bar2.x) &&...
        (params.sim.bar1.x < p3_x < params.sim.bar2.x)
@@ -213,7 +215,8 @@ elseif (params.sim.bar2.x < p1_x) &&...
     dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
     F = [Fnow(1); Fnow(2)];
 end
-
+}%
+    
 end
 %% end of robot_dynamics.m
 

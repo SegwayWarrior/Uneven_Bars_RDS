@@ -123,13 +123,13 @@ x_anim = x_anim'; % transpose so that xsim is 10xN (N = number of timesteps)
 F_anim = interp1(tsim,F_list',t_anim);
 F_anim = F_anim';
 
-animate_robot_uneven(x_anim(1:10,:),F_list,params,'trace_top_com',true,...
-                                                  'trace_top_tip',true,...
-                                                  'trace_mid_com',true,...
-                                                  'trace_mid_tip',true,...
-                                                  'trace_bot_com',true,...
-                                                  'trace_bot_tip',true,...
-                                                  'show_constraint_forces',true,'video',true);
+animate_robot_uneven(x_anim(1:10,:),F_list,params,'trace_top_com',false,...
+                                                  'trace_top_tip',false,...
+                                                  'trace_mid_com',false,...
+                                                  'trace_mid_tip',false,...
+                                                  'trace_bot_com',false,...
+                                                  'trace_bot_tip',false,...
+                                                  'show_constraint_forces',false,'video',true);
 fprintf('Done!\n');
 
 %% BELOW HERE ARE THE NESTED FUNCTIONS, ROBOT_DYNAMICS AND ROBOT_EVENTS
@@ -186,11 +186,11 @@ M3 = params.model.dyn.bot.m;      % mass of the bot link
 com_l1x = xx + l1*sin(th1)/2;
 com_l1y = yy - l1*cos(th1)/2;
 
-com_l2x = l1*sin(th1) + l2*sin(th1+th2)/2;
-com_l2y = l1*cos(th1) - l2*cos(th1+th2)/2;
+com_l2x = xx + l1*sin(th1) + l2*sin(th1+th2)/2;
+com_l2y = yy - l1*cos(th1) - l2*cos(th1+th2)/2;
 
-com_l3x = l1*sin(th1) + l2*sin(th1+th2) + l3*sin(th1+th2+th3)/2;
-com_l3y = l1*cos(th1) - l2*cos(th1+th2) - l3*cos(th1+th2+th3)/2;
+com_l3x = xx + l1*sin(th1) + l2*sin(th1+th2) + l3*sin(th1+th2+th3)/2;
+com_l3y = yy - l1*cos(th1) - l2*cos(th1+th2) - l3*cos(th1+th2+th3)/2;
 
 com_x = (com_l1x*M1 + com_l2x*M2 + com_l3x*M3) / (M1+M2+M3);
 com_y = (com_l1y*M1 + com_l2y*M2 + com_l3y*M3) / (M1+M2+M3);
@@ -209,6 +209,41 @@ persistent counteri
 if isempty(counteri)
     counteri = [];
 end
+
+
+
+% PD controller
+kp2 = 1;
+kp3 = 1;
+kd2 = 5;
+kd3 = 5;
+th2des = 0;
+th3des = 0;
+
+persistent th2pre
+if isempty(th2pre)
+    th2pre = th2;
+end
+persistent th3pre
+if isempty(th3pre)
+    th3pre = th3;
+end
+persistent th2errorpre
+if isempty(th2errorpre)
+    th2errorpre = 0;
+end
+persistent th3errorpre
+if isempty(th3errorpre)
+    th3errorpre = 0;
+end
+
+th2error = th2des - th2;
+th3error = th3des - th3;
+tau_shoulders = kp2*th2error + kd2*(th2error - th2errorpre);
+tau_hips = kp3*th3error + kd3*(th3error - th3errorpre);
+th2errorpre = th2error;
+th3errorpre = th3error;
+
 % persistent com_y_pre;
 
 % 
@@ -222,36 +257,47 @@ tau_shoulders = 0;
 tau_hips = 0;
 pi = 3.141;
 
-if (th2 > pi/2) 
-        tau_shoulders = -5;
-elseif (th2 < -pi/2)
-        tau_shoulders = 5;
-end
-if (th3 > pi/2)
-        tau_hips = -5;
-elseif (th3 < -pi/2)
-        tau_hips = 5;
-end
-
-if (com_x > com_x_pre)  % moving to right
-    if (com_x < 0) % falling
-        tau_shoulders = 1;
-        tau_hips = 1;
-    else % rising
-        tau_shoulders = 3;
-        tau_hips = 3;
-    end
+if (com_x >= com_x_pre)  % moving to right
+%     if (com_x <= 0) % falling
+%         th2des = th1;
+%         th3des = 0;
+%     else % rising
+        th2des = pi/4;
+        th3des = pi/4;
+%     end
      
 else
-    if (com_x > 0) % falling
-        tau_shoulders = -1;
-        tau_hips = -1;
-    else % rising
-        tau_shoulders = -3;
-        tau_hips = -3;
-    end
+%     if (com_x >= 0) % falling
+%         th2des = 0;
+%         th3des = 0;
+%     else % rising
+        th2des = -pi/4;
+        th3des = -pi/4;
+%     end
     
 end
+
+% % if theta2 or 3 are past their max, then push back
+% if (th2 > pi/2) 
+%         tau_shoulders = -4;
+% elseif (th2 < -pi/2)
+%         tau_shoulders = 4;
+% end
+% if (th3 > pi/2)
+%         tau_hips = -4;
+% elseif (th3 < -pi/2)
+%         tau_hips = 4;
+% end
+
+
+
+
+th2error = th2des - th2;
+th3error = th3des - th3;
+tau_shoulders = kp2*th2error + kd2*(th2error - th2errorpre);
+tau_hips = kp3*th3error + kd3*(th3error - th3errorpre);
+th2errorpre = th2error;
+th3errorpre = th3error;
 
 com_x_pre = com_x;
 com_y_pre = com_y;

@@ -7,6 +7,7 @@ function params = init_params
     params.model.dyn.bot.m = 1;      % mass of the bot link
     params.model.dyn.motor1.m = 0.5; % mass of motor 1
     params.model.dyn.motor2.m = 0.5; % mass of motor 2
+
     
     params.model.dyn.top.I = 0.01; % moment of inertia of top link
     params.model.dyn.mid.I = 0.01; % moment of inertia of mid link
@@ -53,7 +54,7 @@ function params = init_params
     % in time:
     params.sim.ICs.x = params.sim.bar1.x;        % initial x position
     params.sim.ICs.y = params.sim.bar1.y;        % initial y position
-    params.sim.ICs.theta_1 = -3*pi/4;  % initial theta_1 position
+    params.sim.ICs.theta_1 = 0.1;  % initial theta_1 position
     params.sim.ICs.theta_2 = 0;  % initial theta_2 position
     params.sim.ICs.theta_3 = 0;  % initial theta_3 position
     
@@ -74,9 +75,9 @@ function params = init_params
                    params.sim.ICs.dtheta_2;
                    params.sim.ICs.dtheta_3];
                
-    params.sim.dt = 0.01;  % simulation timestep
+    params.sim.dt = 0.07;  % simulation timestep
     params.viz.dt = 0.5;  % visualization timestep
-    params.sim.tfinal = 5; % simulation final time
+    params.sim.tfinal = 10; % simulation final time
     
     params.motor1.peaktorque = 1.0; % Nm assumes Maxon EC40 and 3.3x gear ratio
     params.motor2.peaktorque = 1.0; % Nm assumes Maxon EC40 and 3.3x gear ratio
