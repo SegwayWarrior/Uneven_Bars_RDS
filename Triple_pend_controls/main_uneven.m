@@ -222,7 +222,7 @@ elseif (params.sim.bar2.x < p1_x) &&...
     dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
     F = [Fnow(1); Fnow(2)];
 end
-}%
+% }%
 
 end
 %% end of robot_dynamics.m
