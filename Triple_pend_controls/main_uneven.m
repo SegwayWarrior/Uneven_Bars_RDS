@@ -16,7 +16,7 @@ params = init_params;
 %% Set up events using odeset
 options = odeset('Events', @(t,x) robot_events(t,x));
 
-%% Simulate the robot forward in time
+%% Simulate the robot forward in time 
 x_IC = params.x_IC';    % initial conditions
 tnow = 0.0;             % starting time
 
@@ -36,23 +36,23 @@ while tnow < params.sim.tfinal
     tspan = [tnow params.sim.tfinal];
     [tseg, xseg, te, ye, ie] = ode45(@robot_dynamics, tspan, x_IC, options);
 
-    tsim = [tsim;tseg]; % augment simulation time
+    tsim = [tsim;tseg]; % augment simulation time 
     xsim = [xsim;xseg]; % augment simulation states
     te_sim = [te_sim; te]; % augment event time
     ye_sim = [ye_sim; ye]; % augment location of events
     tnow = tsim(end); % updates time
     x_IC = xsim(end,:); % renew initial conditions
-
+    
     % compute the constraint forces that were active
     [Fseg] = constraint_forces_uneven(tseg,xseg',params);
     F_list = [F_list,Fseg];
-
+    
     % if simulation terminated before tfinal, determine which constraints
     % are still active, then continue integration
     if tseg(end) < params.sim.tfinal  % termination was triggered by an event
         switch params.sim.constraints
             case ['pumping'] % The robot is pumping up for Giant Swing
-                params.sim.constraints = ['bar1'] % Finish giant swing on bar 1
+                params.sim.constraints = ['bar1'] % Finish giant swing on bar 1 
             case ['bar1']  % The robot is on bar 1 prior to termination
                 params.sim.constraints = ['flight']; % Robot releases from bar 1 and is in flight
             case ['flight'] % The robot is in flight prior to termination
@@ -109,7 +109,7 @@ fprintf('Done!\n');
 
 %% robot_dynamics.m %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% Description:
+% Description: 
 %   Computes constraint forces (Fnow =
 %   inv(A*Minv*A')*(A*Minv*(Q-H) + Adotqdot) and impacts (delta_dq =
 %   -Minv*A'*inv(A*Minv*A')*(1+eps)*A*q_dot;)
@@ -139,9 +139,9 @@ tau_shoulders = 0;
 tau_hips = 0;
 % 5x1 Q column vector
 Q = [0;
-     0;
-     0;
-     tau_shoulders;
+     0; 
+     0; 
+     tau_shoulders; 
      tau_hips];
 
 % H matrix
@@ -170,7 +170,12 @@ Minv = inv(M);
 [A_all,Hessian] = constraint_derivatives(x,params);
 
 % function that returns drift vector field and control vector field
-% [f_ss, g_ss] = state_space(x, Minv, C, G, S);
+[f_ss, g_ss] = state_space(x, Minv, C, G, S);
+
+% functions that return kinetic energy, potential energy and total energy
+KE = kinetic_energy(x,params);
+PE = potential_energy(x,params);
+TE = total_energy(x,params);
 
 % solves for current robot state
 xx = x(1);
@@ -261,14 +266,13 @@ switch params.sim.constraints
         dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
         F = [Fnow(1); Fnow(2)];
 end
-}%
 
 end
 %% end of robot_dynamics.m
 
 %% Event function for ODE45 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Description:
-%   Event function that is called when a constraint becomes inactive (or, in the future, active)
+%   Event function that is called when a constraint becomes inactive (or, in the future, active) 
 
 % Inputs:
 %   t and x are required, but not used
@@ -285,12 +289,12 @@ function [value,isterminal,direction] = robot_events(t,x)
     th1 = x(3);
     th2 = x(4);
     th3 = x(5);
-
+    
     % length of each link
     l1 = params.model.geom.top.l;
     l2 = params.model.geom.mid.l;
     l3 = params.model.geom.bot.l;
-
+    
     % (x,y) location of top link tip
     p1_x = xx + l1*sin(th1);
     p1_y = yy - l1*cos(th1);
@@ -342,6 +346,6 @@ function [value,isterminal,direction] = robot_events(t,x)
             direction = 0;
     end
 end
-%% end of robot_events.m
+%% end of robot_events.m 
 end
 %% End of main.m
