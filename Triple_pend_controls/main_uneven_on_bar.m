@@ -41,10 +41,22 @@ init_env();
 %% Initialize parameters
 params = init_params;
 
+global theta_desired;
+theta_desired = 0;
+global prev_error2;
+prev_error2 = 0;
+global prev_error3;
+prev_error3 = 0;
+
+global kp;
+kp = 0.1;
+global kd;
+kd = 1;
+
 %% Set up events using odeset
 options = odeset('Events',@robot_events);
 
-%% Simulate the robot forward in time 
+%% Simulate the robot forward in time
 x_IC = params.x_IC';    % initial conditions
 tnow = 0.0;             % starting time
 
@@ -70,12 +82,12 @@ while tnow < params.sim.tfinal
     te_sim = [te_sim; te];
     ye_sim = [ye_sim; ye];
     tnow = tsim(end);
-    x_IC = xsim(end,:); 
-    
+    x_IC = xsim(end,:);
+
     % compute the constraint forces that were active during the jump
     [Fseg] = constraint_forces_uneven(tseg,xseg',params);
     F_list = [F_list,Fseg];
-    
+
     % if simulation terminated before tfinal, determine which constraints
     % are still active, then continue integration
     if tseg(end) < params.sim.tfinal  % termination was triggered by an event
@@ -90,19 +102,6 @@ end
 
 assignin('base','x2',xsim)
 assignin('base','te',te_sim)
-
-%%  Plot Results %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Begin with plot of ground reaction versus weight, to be sure we're
-% pushing off and then leaving the ground
-figure;
-plot(tsim,F_list(1,:)+F_list(2,:),'b-','LineWidth',2);
-hold on
-weight = (params.model.dyn.top.m + params.model.dyn.mid.m + params.model.dyn.bot.m + ...
-          params.model.dyn.motor1.m + params.model.dyn.motor2.m)*params.model.dyn.g*ones(1,length(tsim));
-plot(tsim,weight,'r-','LineWidth',1);
-ylabel('Ground Reaction vs Weight (N)')
-xlabel('time (sec)')
-hold off
 
 % Now let's animate
 
@@ -138,7 +137,7 @@ fprintf('Done!\n');
 %% robot_dynamics.m %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % Description:
-%   Computes the constraint forces: 
+%   Computes the constraint forces:
 %       Fnow = inv(A*Minv*A')*(A*Minv*(Q-H) + Adotqdot)
 %
 %   Also computes the derivative of the state:
@@ -246,7 +245,7 @@ th3errorpre = th3error;
 
 % persistent com_y_pre;
 
-% 
+%
 % com_x_change = com_x - com_x_pre;
 com_y_change = com_y - com_y_pre;
 
@@ -257,47 +256,61 @@ tau_shoulders = 0;
 tau_hips = 0;
 pi = 3.141;
 
-if (com_x >= com_x_pre)  % moving to right
-%     if (com_x <= 0) % falling
-%         th2des = th1;
-%         th3des = 0;
-%     else % rising
-        th2des = pi/4;
-        th3des = pi/4;
-%     end
-     
-else
-%     if (com_x >= 0) % falling
-%         th2des = 0;
-%         th3des = 0;
-%     else % rising
-        th2des = -pi/4;
-        th3des = -pi/4;
-%     end
-    
+if th2 > 3.14
+    while(th2 > 3.14)
+        th2 = th2 - 3.14;
+    end
+elseif th2 < -3.14
+    while(th2 < -3.14)
+        th2 = th2 + 3.14;
+    end
 end
 
-% % if theta2 or 3 are past their max, then push back
-% if (th2 > pi/2) 
-%         tau_shoulders = -4;
-% elseif (th2 < -pi/2)
-%         tau_shoulders = 4;
-% end
-% if (th3 > pi/2)
-%         tau_hips = -4;
-% elseif (th3 < -pi/2)
-%         tau_hips = 4;
-% end
+if th3>3.14
+    while(th3>3.14)
+        th3 = th3 - 3.14;
+    end
+elseif th3 < -3.14
+    while(th3 < -3.14)
+        th3 = th3 + 3.14;
+    end
+end
 
+%{
+if (th2>3.14/2)
+    error2 = 3.14 - th2;
+else
+    error2 = theta_desired - th2;
+end
 
+derivative2 = error2 - prev_error2;
 
+if(th3>3.14/2)
+    error3 = 3.14 - th3;
+else
+    error3 = theta_desired - th3;
+end
 
-th2error = th2des - th2;
-th3error = th3des - th3;
-tau_shoulders = kp2*th2error + kd2*(th2error - th2errorpre);
-tau_hips = kp3*th3error + kd3*(th3error - th3errorpre);
-th2errorpre = th2error;
-th3errorpre = th3error;
+derivative3 = error3 - prev_error3;
+%}
+
+error2 = theta_desired - th2;
+derivative2 = error2 - prev_error2;
+
+error3 = theta_desired - th3;
+derivative3 = error3 - prev_error3;
+
+tau_shoulders = kp*error2 + kd*derivative2;
+th2
+
+tau_hips = kp*error3 + kd*derivative3;
+th3
+
+%tau_shoulders
+%tau_hips
+
+prev_error2 = error2;
+prev_error3 = error3;
 
 com_x_pre = com_x;
 com_y_pre = com_y;
@@ -371,7 +384,7 @@ elseif (params.sim.bar1.x < p1_x < params.sim.bar2.x) &&...
     s = ['false', 'false'];
     dx(1:nq) = q_dot;
     dx(nq+1:2*nq) = Minv*(Q - H);
-    F = [0;0]; 
+    F = [0;0];
 elseif (params.sim.bar2.x < p1_x) &&...
        (params.sim.bar2.x < p2_x) &&...
        (params.sim.bar2.x < p3_x)
@@ -385,14 +398,14 @@ elseif (params.sim.bar2.x < p1_x) &&...
     F = [Fnow(1); Fnow(2)];
 end
 %}
-    
+
 end
 %% end of robot_dynamics.m
 
 
 %% Event function for ODE45 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Description:
-%   Event function that is called when a constraint becomes inactive (or, in the future, active) 
+%   Event function that is called when a constraint becomes inactive (or, in the future, active)
 %
 % Inputs:
 %   t and x are required, but not used
@@ -403,7 +416,7 @@ end
 %   isterminal
 %   direction
 function [value,isterminal,direction] = robot_events(t,x)
-    switch params.sim.constraints  
+    switch params.sim.constraints
         case ['false','false'] % robot is off the bar
             value = 1;
             isterminal = 0;
@@ -415,7 +428,6 @@ function [value,isterminal,direction] = robot_events(t,x)
     end
 
 end
-%% end of robot_events.m 
+%% end of robot_events.m
 end
 %% End of main.m
-
