@@ -12,5 +12,6 @@
 5. If you want to change the bar position or other paramters, please change the same code in init_params_release.m and init_params.m together. The names are the same
 
 6. example with collision
+
 ![](collision.gif)
 
