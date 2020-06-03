@@ -56,7 +56,7 @@ function params = init_params
     % in time:
     params.sim.ICs.x = params.sim.bar1.x; % initial x position
     params.sim.ICs.y = params.sim.bar1.y; % initial y position
-    params.sim.ICs.theta_1 = -3*pi/4;     % initial theta_1 position
+    params.sim.ICs.theta_1 = 0.1;     % initial theta_1 position
     params.sim.ICs.theta_2 = 0;           % initial theta_2 position
     params.sim.ICs.theta_3 = 0;           % initial theta_3 position
     
@@ -78,7 +78,7 @@ function params = init_params
                    params.sim.ICs.dtheta_2;
                    params.sim.ICs.dtheta_3];
                
-    params.sim.dt = 0.01;  % simulation timestep
+    params.sim.dt = 0.05;  % simulation timestep
     params.viz.dt = 0.5;  % visualization timestep
     params.sim.tfinal = 5; % simulation final time
     
