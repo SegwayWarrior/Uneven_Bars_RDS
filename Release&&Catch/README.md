@@ -13,5 +13,5 @@
 
 6. example with collision
 
-![](collision.gif)
+![](example.gif)
 
