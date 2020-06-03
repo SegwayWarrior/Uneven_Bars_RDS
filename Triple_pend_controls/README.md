@@ -28,5 +28,9 @@ Name-Value pairs rely on an "input parser"; check out `plot_robot_uneven.m` and 
 This allows the three functions to share variables (including `params` and `F`) without explicit passing.  
 This is helpful since the constraint forces `F` are computed within `robot_dynamics.m` but cannot be easily passed back through `ode45`.
 
+### Changing Parameters
+In order to change initial position, adjust params.sim.ICs in `init_params.m`.
+In order to change torque applied at hips and joints, adjust tau_hips and tau_shoulders in `main_uneven.m` and `constraint_forces_uneven.m`
+Simulation will start at 'bar 1' phase. In order to change starting phase, adjust params.sim.constraints in `init_params.m`.
 ### Status
 The triple pendulum free falls from an initial position, releases from bar 1, and catches bar 2.
