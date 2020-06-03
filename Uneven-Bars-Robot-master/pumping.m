@@ -35,7 +35,8 @@ qa = x(4:5);
 % set up qa_ddot with energy shaping control
 % kinEner = kinetic_energy(x,params);
 % potEner = potential_energy(x,params);
-totEner = total_energy(x,params)
+totEner = total_energy(x,params);
+potEner = potential_energy(x,params)
 
 % desEner = 294.3426;  % max potential energy
 desEner = 800; % gets robot to about 10 rad/sec
