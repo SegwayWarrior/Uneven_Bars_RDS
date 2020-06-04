@@ -13,17 +13,20 @@ init_env();
 %% Initialize parameters
 params = init_params;
 
-k21 = 1;
-k31 = 10;
-k22 = 1;
-k32 = 10;
-k23 = 1;
-k33 = 1;
+k21 = 100;
+k31 = 100;
+k22 = 100;
+k32 = 500;
+k23 = 100;
+k33 = 500;
 
-Edes = 300;
+Edes = 800;
 
 th2_dot_prev = params.sim.ICs.dtheta_2;
 th3_dot_prev = params.sim.ICs.dtheta_3;
+
+tau_shoulders = 0;
+tau_hips = 0;
 
 %% Set up events using odeset
 options = odeset('Events', @(t,x) robot_events(t,x));
@@ -108,12 +111,12 @@ x_anim = x_anim'; % transpose so that x_anim is 10xN (N = number of timesteps)
 F_anim = interp1(tsim,F_list',t_anim);
 F_anim = F_anim'; % transpose so that F_anim is 10xN (N = number of timesteps)
 
-animate_robot_uneven(x_anim(1:10,:),F_list,params,'trace_top_com',true,...
-                                                  'trace_top_tip',true,...
-                                                  'trace_mid_com',true,...
-                                                  'trace_mid_tip',true,...
-                                                  'trace_bot_com',true,...
-                                                  'trace_bot_tip',true,...
+animate_robot_uneven(x_anim(1:10,:),F_list,params,'trace_top_com',false,...
+                                                  'trace_top_tip',false,...
+                                                  'trace_mid_com',false,...
+                                                  'trace_mid_tip',false,...
+                                                  'trace_bot_com',false,...
+                                                  'trace_bot_tip',false,...
                                                   'show_constraint_forces',true,...
                                                   'video',true);
 fprintf('Done!\n');
@@ -202,10 +205,10 @@ end
 com_x_pre = com_x;
 com_y_pre = com_y;
 
-tau_shoulders = 0;
-tau_hips = 0;
+%tau_shoulders = 0;
+%tau_hips = 0;
 
-Q = [0; 0; 0; tau_shoulders; tau_hips];
+%Q = [0; 0; 0; tau_shoulders; tau_hips];
 
 % find the parts that don't depend on constraint forces
 
@@ -325,14 +328,29 @@ K = [k21 0 k22 0; 0 k31 0 k32];
 TE = total_energy(x,params);
 
 Eerr = TE - Edes;
+TE;
 
 E = [k23*Eerr*th1_dot; k33*Eerr*th2_dot];
 
-X = K*[qa; qdota] + E;
+X = -1*K*[qa; qdota] + E;
 
 tau = (M_aa - M_au * inv(M_uu)*M_ua)*X + M_au*inv(M_uu)*(C_uu*qdotu + C_ua*qdota + G_u) + C_au.*qdota + G_a;
 tau_shoulders = tau(1);
 tau_hips = tau(2);
+Eerr;
+th1_dot;
+th2_dot;
+th3_dot;
+TE;
+tau;
+X;
+M_aa;
+M_au;
+M_uu;
+M_ua;
+C_aa;
+tau_shoulders;
+tau_hips;
 
 % 2x4 * 4x1 = 2x1 matrix
 %M_aa is 2x2
@@ -344,6 +362,33 @@ tau_hips = tau(2);
 %G_a is 2x1
 
 %
+
+torq_lim = 1;
+if (tau_shoulders > torq_lim)
+    tau_shoulders = torq_lim;
+end
+if (tau_shoulders < -torq_lim)
+    tau_shoulders = -torq_lim;
+end
+if (tau_hips > torq_lim)
+    tau_hips = torq_lim;
+end
+if (tau_hips < -torq_lim)
+    tau_hips = -torq_lim;
+end
+
+if (th2 > pi/2) && (th2_dot >0)
+    x(9) = -0.1*x(9);
+elseif (th2 < -pi/2) && (th2_dot <0)
+    x(9) = -0.1*x(9);
+end
+if (th3 > pi/2) && (th3_dot >0)
+    x(10) = -0.1*x(10);
+elseif (th3 < -pi/2) && (th3_dot <0)
+    x(10) = -0.1*x(10);
+end
+
+Q = [0; 0; 0; tau_shoulders; tau_hips];
     
 switch params.sim.constraints
     case ['pumping'] % robot is pumping
