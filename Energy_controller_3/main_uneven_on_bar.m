@@ -19,7 +19,7 @@ options = odeset('Events',@robot_events);
 %% Set the initial equilibrium pose of the robot
 x_eq = zeros(10,1);
 % Set to upright equalibrium
-x_eq(2) = 6;  % first bar's y position
+x_eq(2) = 0;  % first bar's y position
 x_eq(3) = 3.141; % th1 at upright
 
 M_eq = mass_matrix_uneven(x_eq,params);    % mass matrix at equilibrium
@@ -114,7 +114,7 @@ animate_robot_uneven(x_anim(1:10,:),F_list,params,'trace_top_com',false,...
                                                   'trace_mid_tip',false,...
                                                   'trace_bot_com',false,...
                                                   'trace_bot_tip',false,...
-                                                  'show_constraint_forces',true,'video',true);
+                                                  'show_constraint_forces',false,'video',true);
 fprintf('Done!\n');
 
 %% BELOW HERE ARE THE NESTED FUNCTIONS, ROBOT_DYNAMICS AND ROBOT_EVENTS
