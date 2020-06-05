@@ -1,5 +1,0 @@
-success = main_releasebar
-if(success == 1)
-    main_catchbar;
-end
-
