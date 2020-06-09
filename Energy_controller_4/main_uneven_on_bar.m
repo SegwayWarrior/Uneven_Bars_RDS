@@ -10,6 +10,24 @@ clc;
 
 init_env();
 
+persistent check
+if isempty(check)
+    check = 1;
+end
+check = 1;
+
+persistent check2
+if isempty(check2)
+    check2 = 1;
+end
+check2 = 1;
+
+persistent check3
+if isempty(check3)
+    check3 = 1;
+end
+check3 = 1;
+
 %% Initialize parameters
 params = init_params;
 
@@ -318,7 +336,7 @@ qa = x(4:5);
 % set up qa_ddot with energy shaping control
 kinEner = kinetic_energy(x,params);
 potEner = potential_energy(x,params);
-totEner = total_energy(x,params)
+totEner = total_energy(x,params);
 
 potMax1 = 294.3426;  % max potential energy on bar 1 (0,6)
 potMin1 = 176.5817;  % min
@@ -417,7 +435,7 @@ th3errorpre = th3error;
 
 
 % set torque limits
-torq_lim = 1.2;
+torq_lim = 1.3;
 if (tau_shoulders > torq_lim)
     tau_shoulders = torq_lim;
 end
@@ -434,18 +452,21 @@ end
 
 % Internal Collisions - partially reverse rotational velocity if past 90deg
 if (th2 > pi/2) && (th2_dot >0)
-    x(9) = -0.3*x(9);
+    x(9) = 0;
 elseif (th2 < -pi/2) && (th2_dot <0)
-    x(9) = -0.3*x(9);
+    x(9) = 0;
 end
 if (th3 > pi/2) && (th3_dot >0)
-    x(10) = -0.3*x(10);
+    x(10) = 0;
 elseif (th3 < -pi/2) && (th3_dot <0)
-    x(10) = -0.3*x(10);
+    x(10) = 0;
 end
 
 th1pre = th1;
   
+
+% bar release
+
 
 Q = [0;
      0;
@@ -453,6 +474,141 @@ Q = [0;
      tau_shoulders;
      tau_hips];
  
+%  Q = [0;
+%      0;
+%      0;
+%      torq_lim;
+%      torq_lim];
+ 
+% on bar 
+
+A = A_all([1,2],:);
+Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
+            q_dot'*Hessian(:,:,2)*q_dot];
+Fnow = (A*Minv*A')\(A*Minv*(Q - H) + Adotqdot);
+dx(1:nq) = (eye(nq) - A'*((A*A')\A))*x(6:10);
+dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
+F = [Fnow(1); Fnow(2)];
+
+% release
+% check
+% com_x
+xx
+totEner;
+% if (potEner > 0) && (com_x > xx)
+%     Q = [0;
+%      0;
+%      0;
+%      torq_lim;
+%      torq_lim];
+% end
+% if (potEner > 20) && (com_x < xx) 
+% %     s = ['false', 'false'];
+%     check = 2;  
+% end
+% if (check == 2) % curl up for  ready for release
+%     tau_shoulders = kp2*th2error + kd2*(th2error - th2errorpre);
+%     tau_hips = kp3*th3error + kd3*(th3error - th3errorpre);
+%     
+%     if (tau_shoulders > torq_lim)
+%     tau_shoulders = torq_lim;
+%     end
+%     if (tau_shoulders < -torq_lim)
+%         tau_shoulders = -torq_lim;
+%     end
+%     if (tau_hips > torq_lim)
+%         tau_hips = torq_lim;
+%     end
+%     if (tau_hips < -torq_lim)
+%         tau_hips = -torq_lim;
+%     end
+%     Q = [0;
+%      0;
+%      0;
+%      tau_shoulders;
+%      tau_hips];
+%     check2 = 3;
+% end
+if (totEner > 270) && (potEner > -18) && (com_x > 0) % && (chck2 == 3)
+    check = 1;
+    check3 = 4;
+    dx(1:nq) = q_dot;
+     
+     Q = [0;
+     0;
+     0;
+     torq_lim;
+     torq_lim];
+    dx(1:nq) = q_dot;
+    dx(nq+1:2*nq) = Minv*(Q - H);
+    F = [0;0];
+    if (th2 > pi/2) && (th2_dot >0)
+        dx(4) = 0;
+    elseif (th2 < -pi/2) && (th2_dot <0)
+        dx(4) = 0;
+    end
+    if (th3 > pi/2) && (th3_dot >0)
+        dx(5) = 0;
+    elseif (th3 < -pi/2) && (th3_dot <0)
+        dx(5) = 0;
+    end
+
+    dx(nq+1:2*nq) = Minv*(Q - H);
+    F = [0;0];
+end
+if (check3 == 4)
+    check2 = 1;
+    dx(1:nq) = q_dot;
+     
+     Q = [0;
+     0;
+     0;
+     torq_lim;
+     torq_lim];
+    dx(1:nq) = q_dot;
+    dx(nq+1:2*nq) = Minv*(Q - H);
+    F = [0;0];
+    if (th2 > pi/2) && (th2_dot >0)
+        dx(4) = 0;
+    elseif (th2 < -pi/2) && (th2_dot <0)
+        dx(4) = 0;
+    end
+    if (th3 > pi/2) && (th3_dot >0)
+        dx(5) = 0;
+    elseif (th3 < -pi/2) && (th3_dot <0)
+        dx(5) = 0;
+    end
+
+    dx(nq+1:2*nq) = Minv*(Q - H);
+    F = [0;0];
+end
+
+if (xx > 2.7) && (xx < 3.) && (yy > 1.) && (yy < 1.4)
+    check3 = 1;
+    xx_des = 2.9;
+    yy_des = 1.2;
+    kp_gripper = .1;
+   
+    A = A_all([1,2],:);
+    Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
+                q_dot'*Hessian(:,:,2)*q_dot];
+    Fnow = (A*Minv*A')\(A*Minv*(Q - H) + Adotqdot);
+    dx(1:nq) = (eye(nq) - A'*((A*A')\A))*x(6:10);
+    if(xx < 2.9)
+        dx(1) = 1;
+    else
+        dx(1) = 0;
+    end
+    if(yy < 1.2)
+        dx(2) = 1;
+    else
+        dx(2) = 0;
+    end
+%     dx(2)= kp_gripper*(yy - yy_des);
+    dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
+    F = [Fnow(1); Fnow(2)];
+end
+
 delta_t = params.sim.dt;
 
 % persistent kinEnerMax
@@ -509,41 +665,32 @@ potEnerMin;
 
 
 % TRYING TO RELEASE FROM BAR
-xx = x(1);
-yy = x(2);
-th1 = x(3);
-th2 = x(4);
-th3 = x(5);
+% xx = x(1);
+% yy = x(2);
+% th1 = x(3);
+% th2 = x(4);
+% th3 = x(5);
+% 
+% l1 = params.model.geom.top.l;
+% l2 = params.model.geom.mid.l;
+% l3 = params.model.geom.bot.l;
+% 
+% p1_x = xx + l1*sin(th1);
+% p1_y = yy - l1*cos(th1);
+% 
+% p2_x = p1_x + l2*sin(th1+th2);
+% p2_y = p1_y - l2*cos(th1+th2);
+% 
+% p3_x = p2_x + l3*sin(th1+th2+th3);
+% p3_y = p2_y - l3*cos(th1+th2+th3);
 
-l1 = params.model.geom.top.l;
-l2 = params.model.geom.mid.l;
-l3 = params.model.geom.bot.l;
+% if on bar
+%     s = ['true', 'true'];
 
-p1_x = xx + l1*sin(th1);
-p1_y = yy - l1*cos(th1);
-
-p2_x = p1_x + l2*sin(th1+th2);
-p2_y = p1_y - l2*cos(th1+th2);
-
-p3_x = p2_x + l3*sin(th1+th2+th3);
-p3_y = p2_y - l3*cos(th1+th2+th3);
-
-% if (p1_x < params.sim.bar1.x) && (p2_x < params.sim.bar1.x) && (p3_x < params.sim.bar1.x)
-    s = ['true', 'true'];
-    A = A_all([1,2],:);
-    Adotqdot = [q_dot'*Hessian(:,:,1)*q_dot;
-                q_dot'*Hessian(:,:,2)*q_dot];
-    Fnow = (A*Minv*A')\(A*Minv*(Q - H) + Adotqdot);
-    dx(1:nq) = (eye(nq) - A'*((A*A')\A))*x(6:10);
-    dx(nq+1:2*nq) = Minv*(Q - H - A'*Fnow);
-    F = [Fnow(1); Fnow(2)];
 % elseif (params.sim.bar1.x < p1_x < params.sim.bar2.x) &&...
 %        (params.sim.bar1.x < p2_x < params.sim.bar2.x) &&...
 %        (params.sim.bar1.x < p3_x < params.sim.bar2.x)
-%     s = ['false', 'false'];
-%     dx(1:nq) = q_dot;
-%     dx(nq+1:2*nq) = Minv*(Q - H);
-%     F = [0;0];
+
 % elseif (params.sim.bar2.x < p1_x) &&...
 %        (params.sim.bar2.x < p2_x) &&...
 %        (params.sim.bar2.x < p3_x)

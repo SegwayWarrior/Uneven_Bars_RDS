@@ -56,7 +56,7 @@ function params = init_params
     % in time:
     params.sim.ICs.x = params.sim.bar1.x; % initial x position
     params.sim.ICs.y = params.sim.bar1.y; % initial y position
-    params.sim.ICs.theta_1 = 0.01;     % initial theta_1 position
+    params.sim.ICs.theta_1 = 1.5;     % initial theta_1 position
     params.sim.ICs.theta_2 = 0;           % initial theta_2 position
     params.sim.ICs.theta_3 = 0;           % initial theta_3 position
     
@@ -80,7 +80,7 @@ function params = init_params
                
     params.sim.dt = 0.1;  % simulation timestep
     params.viz.dt = 0.1;  % visualization timestep, can increase in future
-    params.sim.tfinal = 45; % simulation final time
+    params.sim.tfinal =10; % simulation final time
     
     params.motor1.peaktorque = 1.0; % Nm assumes Maxon EC40 and 3.3x gear ratio
     params.motor2.peaktorque = 1.0; % Nm assumes Maxon EC40 and 3.3x gear ratio
